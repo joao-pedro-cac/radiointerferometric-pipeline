@@ -66,12 +66,18 @@ class ImagePipeline():
         assert clean_algorithm in ["hogbom", "clark"]
         self.clean_algorithm = clean_algorithm
 
+    def set_psf(self,psf):
+        self.psf = psf
 
+    def set_noise_floor(self, sigma):
+        self.sigma = sigma
+        
     # dirty image computation
     def compute_dirty_image(self, uvw, freq, vis, wgt, verbosity=False):
         uvw = uvw.astype("float64")             # it must be float64
         freq = freq.astype("float64")           # it must be float64
-
+        vis = np.ascontiguousarray(vis, dtype="complex128")  
+        wgt = np.ascontiguousarray(wgt, dtype="float64")
         dirty_image = ducc0.wgridder.vis2dirty(
             uvw=uvw,                            # uvw coordinates
             freq=freq,                          # channel frequencies
@@ -83,7 +89,7 @@ class ImagePipeline():
             pixsize_y=self.__pixel_size_y,      # y-axis pixel size
             epsilon=self.gridding_epsilon,      # computation accuracy
             do_wgridding=True,                  # perform the full algorithm
-            nthreads=8,                         # no. threads used for computation
+            nthreads=1,                         # no. threads used for computation
             double_precision_accumulation=True, # use double precision for computation
             verbosity=verbosity
         )
@@ -95,7 +101,8 @@ class ImagePipeline():
     def compute_psf(self, uvw, freq, vis, wgt, verbosity=False):
         uvw = uvw.astype("float64")             # it must be float64
         freq = freq.astype("float64")           # it must be float64
-
+        vis = np.ascontiguousarray(vis, dtype="complex128")  
+        wgt = np.ascontiguousarray(wgt, dtype="float64")
         psf = ducc0.wgridder.vis2dirty(
             uvw=uvw,
             freq=freq,
@@ -107,7 +114,7 @@ class ImagePipeline():
             pixsize_y=self.__pixel_size_y,
             epsilon=self.gridding_epsilon,
             do_wgridding=True,
-            nthreads=8,
+            nthreads=1,
             double_precision_accumulation=True,
             verbosity=verbosity
         )
@@ -124,12 +131,14 @@ class ImagePipeline():
         psf_peak = np.max(psf)
         dirty_image_norm = dirty_image / psf_peak
         psf_norm = psf / psf_peak
+        mad = 1.4826*np.median(np.abs(dirty_image_norm - np.median(dirty_image_norm)))
+
 
         if self.clean_algorithm == "hogbom":          # Hogbom CLEAN
             model_cube, status = pfb_hogbom.hogbom(
                 dirty_image_norm[np.newaxis, :, :],   # new axis to match three dimensions
                 psf_norm[np.newaxis, :, :],           # new axis to match three dimensions
-                threshold=0,                          # force it to rely on the loop fractional threshold (pf)
+                threshold=3*mad,                          # force it to rely on the loop fractional threshold (pf)
                 gamma=self.clean_gamma,               # loop gain
                 pf=self.clean_pf,                     # stop when max residual drops to (pf * peak_dirty_value)
                 maxit=self.clean_maxiter,
@@ -162,7 +171,7 @@ class ImagePipeline():
                 maxit=self.clean_maxiter,             # Major cycles max limit
                 subpf=0.5,                            # Subminor loop threshold fraction
                 submaxit=1000,                        # Max iterations per subminor loop
-                nthreads=8,                           # Match your wgridder thread count
+                nthreads=1,                           # Match your wgridder thread count
                 verbosity=verbosity
             )
 
@@ -175,7 +184,8 @@ class ImagePipeline():
     def compute_visibilities(self, dirty_image, uvw, freq, wgt, verbosity=False):
         uvw = uvw.astype("float64")             # it must be float64
         freq = freq.astype("float64")           # it must be float64
-
+        dirty_image = np.ascontiguousarray(dirty_image, dtype="float64")  
+        wgt = np.ascontiguousarray(wgt, dtype="float64")
         vis = ducc0.wgridder.dirty2vis(
             uvw=uvw,                            # uvw coordinates
             freq=freq,                          # channel frequencies
@@ -187,21 +197,52 @@ class ImagePipeline():
             center_y=0,                         # y-coordinate of the center relative to the phase center
             epsilon=self.gridding_epsilon,      # computation accuracy (>= 1e-5)
             do_wgridding=True,                  # perform the full algorithm
-            nthreads=8,                         # no. threads used for computation    
+            nthreads=1,                         # no. threads used for computation    
             verbosity=verbosity
         )
 
         return vis
     
 
-    # image metrics calculation
-    def calculate_image_metrics(self, clean_image):
-        image_metrics = {
-            "rms"           : float(image_data_analysis.compute_rms(clean_image)),
-            "dynamic_range" : float(image_data_analysis.compute_dr(clean_image)),
-            "snr"           : float(image_data_analysis.compute_snr(clean_image, self.true_image)),
-            "psnr"          : float(image_data_analysis.compute_psnr(clean_image, self.true_image)),
-            "ssim"          : float(image_data_analysis.compute_ssim(clean_image, self.true_image))
-        }
+    # # image metrics calculation
+    # def calculate_image_metrics(self, clean_image):
+    #     image_metrics = {
+    #         "rms"           : float(image_data_analysis.compute_rms(clean_image)),
+    #         "dynamic_range" : float(image_data_analysis.compute_dr(clean_image)),
+    #         "snr"           : float(image_data_analysis.compute_snr(clean_image, self.true_image)),
+    #         "psnr"          : float(image_data_analysis.compute_psnr(clean_image, self.true_image)),
+    #         "ssim"          : float(image_data_analysis.compute_ssim(clean_image, self.true_image))
+    #     }
 
-        return image_metrics
+    #     return image_metrics
+
+    def calculate_image_metrics(self, clean_model, residual_image):
+
+        iy, ix = np.unravel_index(np.argmax(np.abs(clean_model)), clean_model.shape)
+        ty, tx = np.unravel_index(np.argmax(np.abs(self.true_image)), self.true_image.shape)
+        print("model peak", (iy,ix), "true peak", (ty,tx), "sum model", clean_model.sum(), "sum true", self.true_image.sum())
+
+        ida = image_data_analysis
+        bmaj, bmin, pa = ida.synth_beam_from_psf(self.psf)
+        kern = ida.make_beam_kernel(bmaj, bmin, pa)                 # peak-norm: shape metrics
+        model_restored = ida.restore(clean_model, kern)
+        true_restored  = ida.restore(self.true_image, kern)
+
+        residual = np.asarray(residual_image, np.float64)     # -> Jy/beam
+        sigma = getattr(self, "sigma", None)
+        res_rms = ida.compute_rms(residual)
+
+        return {
+            "cross_correlation": float(ida.compute_cross_correlation(model_restored, true_restored)),
+            "snr":  float(ida.compute_snr(model_restored, true_restored)),
+            "psnr": float(ida.compute_psnr(model_restored, true_restored)),
+            # flux on RAW arrays, loose mask — no convolution, no truncation
+            "flux_ratio":       float(ida.compute_flux_ratio(clean_model, self.true_image)),
+            # "flux_ratio_faint": float(ida.compute_flux_ratio(
+            #                         clean_model, self.true_image,
+            #                         mask=ida.faint_mask(self.true_image))),
+            "residual_rms":            float(res_rms),
+            "residual_rms_over_sigma": (float(res_rms/sigma) if sigma else None),
+            "achieved_dr": float(ida.compute_achieved_dr(residual, np.max(model_restored))),
+            "beam_bmaj_px": float(bmaj), "beam_bmin_px": float(bmin),
+        }

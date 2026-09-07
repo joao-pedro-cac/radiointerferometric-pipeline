@@ -300,6 +300,7 @@ def main() -> None:
         print(f"[simulate] Written {settings_path}")
         print(f"[simulate] Running OSKAR ({oskar}) ...")
         run_oskar(oskar, settings_path, [data_root, output_dir])
+
         print(f"[simulate] OSKAR done → {ms_path}")
     else:
         if not ms_path.exists():

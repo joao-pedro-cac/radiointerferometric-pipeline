@@ -17,7 +17,10 @@ from quantization.quantize import *
 from imaging.image_data_analysis import *
 from imaging.image_pipeline import ImagePipeline
 
+from pfb_imaging.utils.naming import xds_from_url
+from daskms.fsspec_store import DaskMSStore
 
+from pathlib import Path
 
 
 # experiment time and day
@@ -46,9 +49,11 @@ with open(simulation_config_filepath, "r") as fd:
 # auxiliary variables
 BARLENGTH = 80
 BARCHAR = '-'
-SIMULATED_DATA_PATH = simulation_config["file_paths"]["astronomical_data_zarr_file_path"]
-TRUE_MODEL_PATH = simulation_config["file_paths"]["true_model_file_path"]
-PERCENTAGE_VISIBILITIES = simulation_config["attributes"]["percentage_visibilities"]
+DATA_PATH = simulation_config["file_paths"]["data_path"]
+DATASET_NAME = simulation_config["file_paths"]["dataset_name"]
+SIMULATED_DATA_PATH = Path(DATA_PATH, DATASET_NAME, "obs_I.xds")
+TRUE_MODEL_PATH = Path(DATA_PATH, DATASET_NAME, "truth_model.fits")
+PERCENTAGE_VISIBILITIES = simulation_config["attributes"]["vis_fraction"]
 RNG_SEED = simulation_config["attributes"]["rng_seed"]
 
 assert PERCENTAGE_VISIBILITIES >= 0 and PERCENTAGE_VISIBILITIES <= 1
@@ -82,8 +87,22 @@ assert SAFE_FLOAT16_MAX < 65504
 telescope = simulation_config["attributes"]["telescope"]
 skymodel = simulation_config["attributes"]["sky_model"]
 true_image = np.squeeze(fits.getdata(TRUE_MODEL_PATH))       # true (original) sky image
+noise_floor = simulation_config["attributes"]["noise_floor"]
 
-oskar_simulated_dataset = xr.open_dataset(SIMULATED_DATA_PATH, engine="zarr")
+# oskar_simulated_dataset = xr.open_dataset(SIMULATED_DATA_PATH, engine="zarr")
+
+## Open dataset from xds radio dataset using pfb-imaging utils functions.
+
+xds_store = DaskMSStore(SIMULATED_DATA_PATH)
+
+print("Opening xds dataset.... ")
+print("Warning : Assuming one xarray in xds. If using multiple scan datasets only first one will be processed.")
+
+xds, _ = xds_from_url(xds_store.url)
+oskar_simulated_dataset = xds[0]
+
+
+
 rng = np.random.default_rng(RNG_SEED)
 
 
@@ -121,7 +140,7 @@ pipeline = ImagePipeline(clean_algorithm=CLEAN_VARIANT,
                          clean_maxiter=CLEAN_MAXITER)
 
 pipeline.set_true_model(TRUE_MODEL_PATH)
-
+pipeline.set_noise_floor(noise_floor)
 
 
 ########################################################################################################################
@@ -209,6 +228,7 @@ psf = pipeline.compute_psf(uvw=uvw_data,
                            vis=vis,
                            wgt=wgt,
                            verbosity=False)
+pipeline.set_psf(psf)
 psf, scalefactor_psf = quantize_image(psf, psf_quantization_type, SAFE_FLOAT16_MAX)
 
 
@@ -240,19 +260,17 @@ monitor_thread.start()
 clean_model, status = pipeline.compute_clean_image(dirty_image, psf, verbosity=enable_log)
 clean_model, scalefactor_clean = quantize_image(clean_model, clean_model_quantization_type, SAFE_FLOAT16_MAX)
 
-
 # pipeline loop
 k = 1
-while k <= MAJORLOOP_MAXITER and status == 1:
+prev_peak = 0
+
+while k <= MAJORLOOP_MAXITER:
     recomputed_vis = pipeline.compute_visibilities(dirty_image=clean_model,
                                                    uvw=uvw_data,
                                                    freq=freq_data,
                                                    wgt=wgt)
     recomputed_vis, _ = quantize_visibilities(recomputed_vis, vis_quantization_type, SAFE_FLOAT16_MAX, True, scalefactor_vis)
-
-
     residual_vis = vis - recomputed_vis
-
 
     residual_dirty_image = pipeline.compute_dirty_image(uvw=uvw_data,
                                                         freq=freq_data,
@@ -268,20 +286,36 @@ while k <= MAJORLOOP_MAXITER and status == 1:
     clean_model += clean_components
     clean_model, scaled_factor_clean = quantize_image(clean_model, clean_model_quantization_type, SAFE_FLOAT16_MAX)
 
+    res_mad = 1.4826*np.median(np.abs(residual_dirty_image - np.median(residual_dirty_image)))
+    res_peak = np.max(np.abs(residual_dirty_image))
+    prev_residual = residual_dirty_image.copy()   # keep last good one
+
+     
+    if res_peak == 0: 
+        residual_dirty_image = prev_residual       # metrics use the finite residual
+        break
 
 
+    residual_dirty_image = residual_dirty_image / res_peak
+    if res_peak < 3*res_mad or (prev_peak - res_peak) < 0.02*prev_peak:
+        break
+    prev_peak = res_peak
     k += 1
 
 
 # clean model de-scaling for every scaled variable due to float16 limited value range
 if vis_quantization_type == "float16":
     clean_model = (clean_model / scalefactor_vis).astype(np.float32)
+    residual_dirty_image = (residual_dirty_image / scalefactor_vis).astype(np.float32)
 if dirty_image_quantization_type == "float16":
     clean_model = (clean_model / scalefactor_dirty).astype(np.float32)
+    residual_dirty_image = (residual_dirty_image / scalefactor_dirty).astype(np.float32)
 if psf_quantization_type == "float16":
     clean_model = (clean_model * scalefactor_psf).astype(np.float32)
+    residual_dirty_image = (residual_dirty_image / scalefactor_psf).astype(np.float32)
 if clean_model_quantization_type == "float16":
     clean_model = (clean_model / scalefactor_clean).astype(np.float32)
+    residual_dirty_image = (residual_dirty_image / scaled_factor_clean).astype(np.float32)
 
 
 monitor.keep_measuring = False
@@ -306,6 +340,7 @@ if enable_log:
 
 # save results and metrics
 output_filepath = simulation_config["file_paths"]["output_file_path"]
+os.makedirs(output_filepath, exist_ok=True)
 os.chdir(output_filepath)
 print(f"Output in {output_filepath}")
 
@@ -327,31 +362,36 @@ os.chdir(time_dirname)
 if enable_log:
     print(f"Experiment began at {hour:02}:{min:02}:{sec:02}")
     print(BARLENGTH * BARCHAR)
-    print("Saving CLEAN image to FITS files...")
+    # print("Saving CLEAN image to FITS files...")
+
+
+# # --- restored image: sky-oriented model+psf in, display frame written out ---
+# save_restored_fits(clean_model, psf, "restored_model.fits",
+#                    template_header_path=TRUE_MODEL_PATH)
 
 
 dirty_image  = np.transpose(dirty_image)[::-1, :]
 clean_model  = np.transpose(clean_model)[::-1, :]
 
 
-# saving clean image to a FITS file
-try:
-    # copy the original model's coordinate system (header)
-    with fits.open(TRUE_MODEL_PATH) as hdul:
-        original_header = hdul[0].header
+# # saving clean image to a FITS file
+# try:
+#     # copy the original model's coordinate system (header)
+#     with fits.open(TRUE_MODEL_PATH) as hdul:
+#         original_header = hdul[0].header
         
-    # create a new FITS files using the clean image and the copied header
-    new_hdu = fits.PrimaryHDU(data=clean_model, header=original_header)
-    new_hdu.writeto("clean_model.fits", overwrite=True)
+#     # create a new FITS files using the clean image and the copied header
+#     new_hdu = fits.PrimaryHDU(data=clean_model, header=original_header)
+#     new_hdu.writeto("clean_model.fits", overwrite=True)
 
-    if enable_log:
-        print(f"Successfully saved CLEAN image")
-except FileNotFoundError:      # exception if TRUE_MODEL_PATH is not found
-    new_hdu = fits.PrimaryHDU(data=clean_model)
-    new_hdu.writeto("clean_model.fits", overwrite=True)
+#     if enable_log:
+#         print(f"Successfully saved CLEAN image")
+# except FileNotFoundError:      # exception if TRUE_MODEL_PATH is not found
+#     new_hdu = fits.PrimaryHDU(data=clean_model)
+#     new_hdu.writeto("clean_model.fits", overwrite=True)
 
-    if enable_log:
-        print(f"Saved CLEAN images (without header metadata)")
+#     if enable_log:
+#         print(f"Saved CLEAN images (without header metadata)")
 
 if enable_log:
     print(BARLENGTH * BARCHAR)
@@ -427,7 +467,22 @@ metrics = {
     }
 }
 
-metrics.update({ "image_metrics" : pipeline.calculate_image_metrics(clean_model) })
+# metrics.update({ "image_metrics" : pipeline.calculate_image_metrics(clean_model) })
+
+# after the major loop, before metrics — reads only variables already in scope
+if not np.isfinite(res_peak) or res_peak == 0:
+    converged_reason = "zero_residual"
+elif res_peak < 3*res_mad:
+    converged_reason = "threshold"
+elif k >= MAJORLOOP_MAXITER:
+    converged_reason = "max_major"
+else:
+    converged_reason = "stall"
+
+
+metrics.update({"image_metrics": pipeline.calculate_image_metrics(clean_model, residual_dirty_image)})
+metrics["image_metrics"]["converged_reason"] = converged_reason
+metrics["image_metrics"]["n_major_cycles"] = int(k)
 
 with open("metrics.json", "w") as fd:
     json_dump(metrics, fd)
@@ -446,31 +501,31 @@ if enable_log:
 # plotting results
 os.mkdir("images")
 os.chdir("images")
-os.mkdir("dirty")
+# os.mkdir("dirty")
 
-if enable_log:
-    print("Plotting results...")
-
-
-fig, axes = plt.subplots(figsize=(14, 12))
+# if enable_log:
+#     print("Plotting results...")
 
 
-# dirty image
-for p in [90, 95, 99, 99.5, 99.9, 99.95, 99.99, 99.999, 100]:
-    percentile = np.percentile(dirty_image, p)
-    dirty_image_new = np.clip(dirty_image, -np.nanstd(dirty_image), percentile)
+# fig, axes = plt.subplots(figsize=(14, 12))
 
-    im = axes.imshow(dirty_image_new, cmap='inferno', origin='lower')
-    axes.set_title(f'Dirty Image (percentile = {p}%)')
-    plt.tight_layout()
 
-    if int(p) == p:
-        filename = str(p)
-    else:
-        whole_part = int(p)
-        decimal_part = p - whole_part
-        filename = str(whole_part) + '_' + str(decimal_part)[2:5]
-    plt.savefig(f'dirty/dirty-image-{filename}.png', format='png')
+# # dirty image
+# for p in [90, 95, 99, 99.5, 99.9, 99.95, 99.99, 99.999, 100]:
+#     percentile = np.percentile(dirty_image, p)
+#     dirty_image_new = np.clip(dirty_image, -np.nanstd(dirty_image), percentile)
+
+#     im = axes.imshow(dirty_image_new, cmap='inferno', origin='lower')
+#     axes.set_title(f'Dirty Image (percentile = {p}%)')
+#     plt.tight_layout()
+
+#     if int(p) == p:
+#         filename = str(p)
+#     else:
+#         whole_part = int(p)
+#         decimal_part = p - whole_part
+#         filename = str(whole_part) + '_' + str(decimal_part)[2:5]
+#     plt.savefig(f'dirty/dirty-image-{filename}.png', format='png')
 
 
 
