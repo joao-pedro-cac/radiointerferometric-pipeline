@@ -1,0 +1,21 @@
+# Pipeline environment for code/ (Python 3.9+ recommended; intern used 3.9.6).
+# Core scientific stack (versions not pinned by the intern -- pin after reinstall):
+numpy
+xarray
+zarr
+dask
+dask-ms        # provides the `daskms` import used in src/main.py
+ducc0
+fsspec
+astropy
+matplotlib
+psutil
+
+# pfb-imaging: install the pinned clone shipped in ../lib/pfb-imaging
+#   pip install -e ../lib/pfb-imaging
+# pinned at commit b13ab7817cc6852aba8835e05fc7c234d5d5be2c (2026-07-17)
+
+# OSKAR simulator is NOT pip-installable here: run the Singularity image
+#   ../lib/OSKAR-2.12.2-Python3.sif   (OSKAR 2.12.2, Python3 variant)
+# e.g. singularity exec lib/OSKAR-2.12.2-Python3.sif oskar_simulator ...
+# or point the OSKAR env var at a native binary (see scripts/run_sim_ctrl.sh).
