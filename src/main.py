@@ -29,8 +29,6 @@ day_dirname = f"results-{day:02}-{month_abbr[month]}-{year}"
 time_dirname = f"experiment_{hour:02}-{min:02}-{sec:02}"
 
 
-
-
 # make sure there is at least one command-line argument
 if len(argv) < 2:
     raise Exception("Error, insert an input JSON file")
@@ -49,7 +47,27 @@ with open(simulation_config_filepath, "r") as fd:
 # auxiliary variables
 BARLENGTH = 80
 BARCHAR = '-'
-DATA_PATH = simulation_config["file_paths"]["data_path"]
+
+# Project root = the archive folder that contains code/, data/, results/, ...
+# Override with the STAGE_ROOT environment variable if the archive is moved.
+PROJECT_ROOT = Path(os.environ.get("STAGE_ROOT", Path(__file__).resolve().parents[2])).resolve()
+LEGACY_PREFIXES = (
+    "/home/mhiriy/radiointerferometry-imaging-quantization",
+    "/home/cavalcantej/radiointerferometry-imaging-quantization",
+    "/home/joaoc/Documents",
+)
+
+def resolve_project_path(p):
+    """Remap absolute paths from the original machines onto this archive."""
+    p = str(p)
+    if not os.path.exists(p):
+        for prefix in LEGACY_PREFIXES:
+            if p.startswith(prefix):
+                p = str(PROJECT_ROOT) + p[len(prefix):]
+                break
+    return p
+
+DATA_PATH = resolve_project_path(simulation_config["file_paths"]["data_path"])
 DATASET_NAME = simulation_config["file_paths"]["dataset_name"]
 SIMULATED_DATA_PATH = Path(DATA_PATH, DATASET_NAME, "obs_I.xds")
 TRUE_MODEL_PATH = Path(DATA_PATH, DATASET_NAME, "truth_model.fits")
@@ -339,7 +357,7 @@ if enable_log:
 
 
 # save results and metrics
-output_filepath = simulation_config["file_paths"]["output_file_path"]
+output_filepath = resolve_project_path(simulation_config["file_paths"]["output_file_path"])
 os.makedirs(output_filepath, exist_ok=True)
 os.chdir(output_filepath)
 print(f"Output in {output_filepath}")
@@ -365,9 +383,9 @@ if enable_log:
     # print("Saving CLEAN image to FITS files...")
 
 
-# # --- restored image: sky-oriented model+psf in, display frame written out ---
-# save_restored_fits(clean_model, psf, "restored_model.fits",
-#                    template_header_path=TRUE_MODEL_PATH)
+# --- restored image: sky-oriented model+psf in, display frame written out ---
+save_restored_fits(clean_model, psf, "restored_model.fits",
+                   template_header_path=TRUE_MODEL_PATH)
 
 
 dirty_image  = np.transpose(dirty_image)[::-1, :]
@@ -375,23 +393,45 @@ clean_model  = np.transpose(clean_model)[::-1, :]
 
 
 # # saving clean image to a FITS file
+# NAMELABELS = {
+#     "float16"  : "f16",
+#     "bfloat16" : "bf16",
+#     "float32"  : "f32"
+# }
+
+# fits_filename = f"{simulation_config["file_paths"]["dataset_name"]}"
+
+
+# if vis_quantization_type != "float64":
+#     fits_filename += f"_v-{NAMELABELS[vis_quantization_type]}"
+# if dirty_image_quantization_type != "float64":
+#     fits_filename += f"_d-{NAMELABELS[dirty_image_quantization_type]}"
+# if psf_quantization_type != "float64":
+#     fits_filename += f"_p-{NAMELABELS[psf_quantization_type]}"
+# if clean_model_quantization_type != "float64":
+#     fits_filename += f"_m-{NAMELABELS[clean_model_quantization_type]}"
+
+
+# fits_filename += ".fits"
+
+
 # try:
-#     # copy the original model's coordinate system (header)
-#     with fits.open(TRUE_MODEL_PATH) as hdul:
-#         original_header = hdul[0].header
-        
-#     # create a new FITS files using the clean image and the copied header
-#     new_hdu = fits.PrimaryHDU(data=clean_model, header=original_header)
-#     new_hdu.writeto("clean_model.fits", overwrite=True)
+#      # copy the original model's coordinate system (header)
+#      with fits.open(TRUE_MODEL_PATH) as hdul:
+#          original_header = hdul[0].header
+       
+#      # create a new FITS files using the clean image and the copied header
+#      new_hdu = fits.PrimaryHDU(data=clean_model, header=original_header)
+#      new_hdu.writeto(fits_filename, overwrite=True)
 
-#     if enable_log:
-#         print(f"Successfully saved CLEAN image")
+#      if enable_log:
+#          print(f"Successfully saved CLEAN image")
 # except FileNotFoundError:      # exception if TRUE_MODEL_PATH is not found
-#     new_hdu = fits.PrimaryHDU(data=clean_model)
-#     new_hdu.writeto("clean_model.fits", overwrite=True)
+#      new_hdu = fits.PrimaryHDU(data=clean_model)
+#      new_hdu.writeto(fits_filename, overwrite=True)
 
-#     if enable_log:
-#         print(f"Saved CLEAN images (without header metadata)")
+#      if enable_log:
+#          print(f"Saved CLEAN images (without header metadata)")
 
 if enable_log:
     print(BARLENGTH * BARCHAR)
@@ -402,7 +442,7 @@ if enable_log:
 parameters = {
     "telescope"           : telescope,
     "sky_model"           : skymodel,
-    "percentage_visibilities" : PERCENTAGE_VISIBILITIES,
+    "vis_fraction" : PERCENTAGE_VISIBILITIES,
     "rng_seed"                : RNG_SEED,
     "data set"            : {
         "uvw"     : {

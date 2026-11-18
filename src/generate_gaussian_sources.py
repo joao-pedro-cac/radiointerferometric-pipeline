@@ -2,27 +2,19 @@ import numpy as np
 import sys
 
 def main():
-    # if len(sys.argv) < 10:
-    #     print(f"Error, there are missing arguments. The program takes at least {9} arguments, received {len(sys.argv) - 1}...", file=sys.stderr)
-    #     return 1
-    
-    # filepath = sys.argv[1]
-    # num_sources = int(sys.argv[2])
-    # right_ascension = float(sys.argv[3])
-    # declination = float(sys.argv[4])
-    # fov_deg = float(sys.argv[5])
-    # dynamic_range = float(sys.argv[6])
-    # seed = int(sys.argv[7])
+    if len(sys.argv) < 10:
+        print(f"Error, there are missing arguments. The program takes at least {9} arguments, received {len(sys.argv) - 1}...", file=sys.stderr)
+        return 1
 
-    filepath = "/home/joaoc/Documents/data/oskar/skymodels/multiple_gaussian_sources.osm"
-    num_sources = 100
-    right_ascension = -120
-    declination = -60
-    fov_deg = 1.0
-    dynamic_range = 10000
-    majoraxis_max = 600
-    minoraxis_max = 500
-    seed = 10
+    filepath = sys.argv[1]
+    num_sources = int(sys.argv[2])
+    right_ascension = float(sys.argv[3])
+    declination = float(sys.argv[4])
+    fov_deg = float(sys.argv[5])
+    dynamic_range = float(sys.argv[6])
+    majoraxis_max = float(sys.argv[7])
+    minoraxis_max = float(sys.argv[8])
+    seed = int(sys.argv[9])
 
     generate_random_gaussian_sources_skymodel(filepath, num_sources, right_ascension, declination, fov_deg, dynamic_range, majoraxis_max, minoraxis_max, seed)
 

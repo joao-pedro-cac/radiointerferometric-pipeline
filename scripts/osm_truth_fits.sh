@@ -2,9 +2,12 @@
 set -euo pipefail
 shopt -s nullglob
 
-OSM_FOLDER="data/oskar/skymodels/hogbom_experiments"
-OUT_FOLDER="data/simulated/hogbom_experiments"
-LOG_DIR="scripts/logs"
+ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+cd "$ROOT/code"
+
+OSM_FOLDER="$ROOT/data/oskar/skymodels/hogbom_experiments"
+OUT_FOLDER="$ROOT/data/simulated/hogbom_experiments"
+LOG_DIR="$ROOT/logs/osm_truth_fits"
 MAXJOBS="${MAXJOBS:-5}"
 
 PY_SCRIPT="src/simulation/osm_to_fits.py"

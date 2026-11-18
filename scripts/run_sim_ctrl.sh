@@ -16,13 +16,14 @@ PYTHON="python"
 # Native binary (default) or Singularity/Apptainer image (.sif/.simg).
 # Override at launch:  OSKAR=/path/to/oskar.sif bash run_sim_ctrl.sh
 
-REPO="/home/mhiriy/radiointerferometry-imaging-quantization"
-OUTPUT_DIR="$REPO/data/simulated"
+ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+REPO="$ROOT/code"
+OUTPUT_DIR="$ROOT/data/simulated/hogbom_experiments"
 SIMULATE="$REPO/src/simulation/simulate.py"
 PFB_INIT="$REPO/src/simulation/pfb_init_noray.py"
 NUMBA_THREADING_LAYER="omp"
 
-OSKAR="$REPO/lib/OSKAR-2.12.2-Python3.sif"
+OSKAR="${OSKAR:-$ROOT/lib/OSKAR-2.12.2-Python3.sif}"
 
 TELESCOPE="meerkat.tm"
 SKYMODEL=$1
@@ -38,8 +39,7 @@ FOV_DEG=1.0
 SR_FACTOR=2.0
 NTHREADS=8
 
-VENV_PATH="/home/mhiriy/robust-radio-imaging/.venv"
-source "${VENV_PATH}/bin/activate"
+if [[ -n "${VENV_PATH:-}" && -f "${VENV_PATH}/bin/activate" ]]; then source "${VENV_PATH}/bin/activate"; fi
 
 echo "[$(date +%H:%M:%S)] Simulating $SKYMODEL (ε=0) ..."
 python "$SIMULATE" \
@@ -61,7 +61,7 @@ python "$SIMULATE" \
     --fov-deg          "$FOV_DEG" \
     --sr-factor        "$SR_FACTOR" \
     --output-dir       "$OUTPUT_DIR" \
-    --data-root        "$REPO" \
+    --data-root        "$ROOT" \
     --nthreads         "$NTHREADS" \
     --overwrite
 

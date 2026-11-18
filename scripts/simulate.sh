@@ -2,10 +2,12 @@
 set -euo pipefail
 shopt -s nullglob
 
-OSM_FOLDER="/home/mhiriy/radiointerferometry-imaging-quantization/data/oskar/skymodels/hogbom_experiments"
-NUMBA_THREADING_LAYER="omp"
+ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+OSM_FOLDER="$ROOT/data/oskar/skymodels/hogbom_experiments"
+# NUMBA_THREADING_LAYER="omp"
+NUMBA_THREADING_LAYER=1
 EXP_ROOT="hogbom_experiments"
-LOG_DIR="data/simulated/${EXP_ROOT}/logs"
+LOG_DIR="$ROOT/logs/simulate"
 MAXJOBS="${MAXJOBS:-5}"
 
 mkdir -p "$LOG_DIR"
@@ -20,7 +22,7 @@ for osm in "${models[@]}"; do
     while (( $(jobs -rp | wc -l) >= MAXJOBS )); do wait -n || true; done
     echo "start  $name"
     (
-        if scripts/run_sim_ctrl.sh "${EXP_ROOT}/${name}" >"${LOG_DIR}/${name}.log" 2>&1; then
+        if "$ROOT/code/scripts/run_sim_ctrl.sh" "${EXP_ROOT}/${name}" >"${LOG_DIR}/${name}.log" 2>&1; then
             echo "done   $name"
         else
             echo "FAIL   $name (see ${LOG_DIR}/${name}.log)" >&2

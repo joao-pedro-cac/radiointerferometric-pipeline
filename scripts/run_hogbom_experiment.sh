@@ -9,9 +9,12 @@ export NUMEXPR_NUM_THREADS=1
 set -euo pipefail
 shopt -s nullglob
 
+ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+cd "$ROOT/code"
+
 CONFIG_DIR="configs/hogbom_experiment"     # e.g. configs/hogbom
 PIPELINE="src/main.py"           # e.g. src/.../pipeline.py
-LOG_DIR="logs/hogbom_experiment"
+LOG_DIR="$ROOT/logs/hogbom_experiment"
 MAXJOBS="${MAXJOBS:-20}"
 
 mkdir -p "$LOG_DIR"

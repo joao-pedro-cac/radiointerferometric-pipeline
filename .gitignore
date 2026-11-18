@@ -1,7 +1,5 @@
-pipeline.py
-backup
-__pycache__
-imaging/__pycache__
-imaging/plot-visibilities.py
-simulation/*
-quantization/__pycache__
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+.ipynb_checkpoints/
