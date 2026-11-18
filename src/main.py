@@ -280,7 +280,7 @@ clean_model, scalefactor_clean = quantize_image(clean_model, clean_model_quantiz
 
 # pipeline loop
 k = 1
-prev_peak = 0
+prev_peak = np.inf   # first iteration must not trip the stall test (was 0, which made it always true)
 
 while k <= MAJORLOOP_MAXITER:
     recomputed_vis = pipeline.compute_visibilities(dirty_image=clean_model,
