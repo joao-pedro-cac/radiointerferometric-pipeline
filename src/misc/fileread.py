@@ -1,6 +1,8 @@
 def extract_pixel_info(truth_model_datapath):
-    with open(truth_model_datapath, 'rt') as fd:
-        text = fd.read(5000).replace(' ', '')
+    # FITS header lives in 2880-byte blocks; never read past the header into
+    # the binary data block (which is not valid UTF-8).
+    with open(truth_model_datapath, 'rb') as fd:
+        text = fd.read(2880).decode('ascii', errors='ignore').replace(' ', '')
 
         # indexes for finding image size and pixel size information
         naxis1_index = text.index('NAXIS1=') + len('NAXIS1=')

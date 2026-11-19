@@ -70,7 +70,9 @@ def resolve_project_path(p):
 DATA_PATH = resolve_project_path(simulation_config["file_paths"]["data_path"])
 DATASET_NAME = simulation_config["file_paths"]["dataset_name"]
 SIMULATED_DATA_PATH = Path(DATA_PATH, DATASET_NAME, "obs_I.xds")
-TRUE_MODEL_PATH = Path(DATA_PATH, DATASET_NAME, "truth_model.fits")
+# optional per-config truth image (default: the delta-function truth written by simulate.py)
+TRUE_MODEL_FILE = simulation_config["file_paths"].get("truth_model", "truth_model.fits")
+TRUE_MODEL_PATH = Path(DATA_PATH, DATASET_NAME, TRUE_MODEL_FILE)
 PERCENTAGE_VISIBILITIES = simulation_config["attributes"]["vis_fraction"]
 RNG_SEED = simulation_config["attributes"]["rng_seed"]
 
