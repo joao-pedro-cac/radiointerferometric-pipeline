@@ -29,7 +29,6 @@ Methods
 
 import numpy as np
 import ducc0.wgridder
-import pfb_imaging.deconv.clark as pfb_clark
 import pfb_imaging.deconv.hogbom as pfb_hogbom
 import imaging.image_data_analysis as image_data_analysis
 from astropy.io import fits
@@ -145,6 +144,7 @@ class ImagePipeline():
                 verbosity=verbosity
             )
         else:                                         # Clark CLEAN
+            import pfb_imaging.deconv.clark as pfb_clark   # lazy: pulls in jax
             # prepare the 3D representations for dirty image and PSF
             dirty_3d = dirty_image_norm[np.newaxis, :, :]
             psf_3d = psf_norm[np.newaxis, :, :]
