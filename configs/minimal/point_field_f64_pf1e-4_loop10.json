@@ -1,7 +1,7 @@
 {
     "attributes": {
         "telescope": "meerkat",
-        "sky_model": "point",
+        "sky_model": "point_field",
         "vis_fraction": 1.0,
         "rng_seed": 42,
         "noise_floor": 0.0001
