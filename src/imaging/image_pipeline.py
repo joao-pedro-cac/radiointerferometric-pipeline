@@ -228,21 +228,29 @@ class ImagePipeline():
         model_restored = ida.restore(clean_model, kern)
         true_restored  = ida.restore(self.true_image, kern)
 
+        # beam area in pixels: the restoring kernel is peak-normalized, so
+        # sum(restored) = sum(model) * beam_area_px; dividing by beam_area_px
+        # recovers the delta-model flux, comparable to sum(truth) on the same grid
+        beam_area_px = np.pi / (4.0 * np.log(2.0)) * bmaj * bmin
+
         residual = np.asarray(residual_image, np.float64)     # -> Jy/beam
         sigma = getattr(self, "sigma", None)
         res_rms = ida.compute_rms(residual)
+        res_mad = 1.4826*np.median(np.abs(residual - np.median(residual)))
 
         return {
             "cross_correlation": float(ida.compute_cross_correlation(model_restored, true_restored)),
             "snr":  float(ida.compute_snr(model_restored, true_restored)),
             "psnr": float(ida.compute_psnr(model_restored, true_restored)),
-            # flux on RAW arrays, loose mask — no convolution, no truncation
+            # legacy metric: ratio of peak-normalized sums = "effective pixel count"
+            # ratio, NOT a flux conservation measure (misleading name, kept for continuity)
             "flux_ratio":       float(ida.compute_flux_ratio(clean_model, self.true_image)),
-            # "flux_ratio_faint": float(ida.compute_flux_ratio(
-            #                         clean_model, self.true_image,
-            #                         mask=ida.faint_mask(self.true_image))),
+            # true flux conservation: deconvolved model flux vs truth flux (same grid)
+            "flux_ratio_beam":  float((model_restored.sum() / beam_area_px) / (np.asarray(self.true_image, np.float64).sum() + 1e-12)),
             "residual_rms":            float(res_rms),
+            "residual_mad":            float(res_mad),
             "residual_rms_over_sigma": (float(res_rms/sigma) if sigma else None),
             "achieved_dr": float(ida.compute_achieved_dr(residual, np.max(model_restored))),
             "beam_bmaj_px": float(bmaj), "beam_bmin_px": float(bmin),
+            "beam_area_px": float(beam_area_px),
         }

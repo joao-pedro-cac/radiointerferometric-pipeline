@@ -249,6 +249,7 @@ psf = pipeline.compute_psf(uvw=uvw_data,
                            wgt=wgt,
                            verbosity=False)
 pipeline.set_psf(psf)
+psf_peak = float(np.max(psf))          # capture before quantization (Jy/beam scale)
 psf, scalefactor_psf = quantize_image(psf, psf_quantization_type, SAFE_FLOAT16_MAX)
 
 
@@ -297,7 +298,8 @@ while k <= MAJORLOOP_MAXITER:
                                                         vis=residual_vis,
                                                         wgt=wgt)
     residual_dirty_image, scalefactor_dirty = quantize_image(residual_dirty_image, dirty_image_quantization_type, SAFE_FLOAT16_MAX)
-    
+    residual_dirty_image = residual_dirty_image / psf_peak   # same Jy/beam normalization as the CLEAN input
+
 
 
     clean_components, status = pipeline.compute_clean_image(dirty_image=residual_dirty_image,
@@ -315,8 +317,8 @@ while k <= MAJORLOOP_MAXITER:
         residual_dirty_image = prev_residual       # metrics use the finite residual
         break
 
-
-    residual_dirty_image = residual_dirty_image / res_peak
+    # NOTE: keep residual_dirty_image in image units (do NOT normalize by
+    # res_peak) so residual_rms / achieved_dr stay in physical units.
     if res_peak < 3*res_mad or (prev_peak - res_peak) < 0.02*prev_peak:
         break
     prev_peak = res_peak
@@ -392,6 +394,12 @@ save_restored_fits(clean_model, psf, "restored_model.fits",
 
 dirty_image  = np.transpose(dirty_image)[::-1, :]
 clean_model  = np.transpose(clean_model)[::-1, :]
+
+# save intermediate images in the same orientation as the metrics arrays
+for _name, _arr in [("dirty_image", dirty_image),
+                    ("psf", np.transpose(psf)[::-1, :]),
+                    ("residual_dirty_image", np.transpose(residual_dirty_image)[::-1, :])]:
+    fits.PrimaryHDU(data=np.asarray(_arr, np.float32)).writeto(_name + ".fits", overwrite=True)
 
 
 # # saving clean image to a FITS file
