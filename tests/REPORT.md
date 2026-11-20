@@ -1,7 +1,7 @@
 # Test report — v2 library gate
 
 Run: `cd code && $VENV_PATH/bin/python -m pytest tests/ -q` (pytest 8.4.2, numpy 1.26.4)
-Status: **30 passed, 0 failed** (2026-11-20, commit after beam-estimator fix)
+Status: **31 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test)
 
 | Area | Test | Analytic ground truth | Expected | Result |
 |---|---|---|---|---|
@@ -14,6 +14,7 @@ Status: **30 passed, 0 failed** (2026-11-20, commit after beam-estimator fix)
 | quantize | f32/f16/bf16 round-trip bounds | rel err ≤ 2⁻²³ / 2⁻¹⁰ / 2⁻⁷; f16,bf16 values exactly representable (low bits zero) | IEEE-754 | pass |
 | quantize | `test_bfloat16_round_to_nearest_even` | 0x…0001/0x7FFF/0x8000 → down, 0x8001 → up | RNE bit-exact | pass |
 | quantize | rescale | f16 output ≤ 65504, finite, scale = 65503/max | range guard | pass |
+| quantize | `test_f16_global_scale_not_block_floating_point` | ONE global scalar scale (65503/amax); outputs exactly f16-representable; subnormal-region errors >10× f16 eps (anti-BFP signature) | global-scale proof | pass |
 | operators | to_native/to_display | exact inverses | identity | pass |
 | operators | phase-centre point source | vis ≡ flux; dirty/psf peak = flux ±1e-4 | analytic | pass |
 | operators | beam kernel | peak = 1, sum = beam_area_px | analytic | pass |

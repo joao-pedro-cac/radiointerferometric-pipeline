@@ -84,3 +84,25 @@ def test_weights_rescale_by_sum():
 def test_invalid_dtype_raises():
     with pytest.raises(ValueError):
         quantize.quantize_array(np.zeros(3), "int8")
+
+
+def test_f16_global_scale_not_block_floating_point():
+    # anti-BFP: ONE global scalar scale per array (65503/amax). A block-floating-
+    # point scheme would use a per-block scale and give small values full f16
+    # relative precision; here they must not.
+    x = np.concatenate([[1e6], np.geomspace(1e-5, 1e-3, 200)])
+    out, scale = quantize.quantize_array(x, "float16")
+    assert np.isscalar(scale) and scale == pytest.approx(65503.0 / x.max())
+    # outputs exactly representable in f16 (a no-op f32 cast would fail this)
+    assert np.array_equal(out, out.astype(np.float16).astype(np.float32))
+    # error at max is f16-level (half-ulp ~2^-11 rel), not f32-level (2^-24)
+    rel0 = abs(out[0] / scale - x[0]) / x[0]
+    assert 1e-6 < rel0 <= 2.0 ** -10
+    rel = np.abs(out[1:] / scale - x[1:]) / x[1:]
+    # anti-BFP: x=1e-4 scaled by the GLOBAL max (0.0655) lands at 6.6e-6, below
+    # the f16 normal floor (6.1e-5) -> subnormal, ulp 2^-24 scaled -> rel error
+    # ~1e-2, far above f16 eps 2^-11. A per-block (BFP) scheme would give it
+    # ~2^-11 relative precision instead.
+    # the subnormal-region samples (x*scale < 2^-14) must show errors far above
+    # f16 eps at least once -> the scale is global, not per-block
+    assert rel.max() > 10 * 2.0 ** -11

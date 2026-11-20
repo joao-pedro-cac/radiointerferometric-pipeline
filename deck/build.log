@@ -4,15 +4,9 @@ Latexmk: This is Latexmk, John Collins, 9 March 2026. Version 4.88.
 Latexmk: applying rule 'pdflatex'...
 Rule 'pdflatex':  Reasons for rerun
 Changed files or newly in use/created:
-  ../analysis/figures/panel_S0_point1_n101.png
-  ../analysis/figures/panel_S1_points_dr10_n101.png
-  ../analysis/figures/panel_S2_mixed_dr100_n101.png
-  ../analysis/figures/panel_S3_gauss_dr1000_n101.png
+  main.tex
 Category 'changed_user':
-  ../analysis/figures/panel_S0_point1_n101.png
-  ../analysis/figures/panel_S1_points_dr10_n101.png
-  ../analysis/figures/panel_S2_mixed_dr100_n101.png
-  ../analysis/figures/panel_S3_gauss_dr1000_n101.png
+  main.tex
 
 ------------
 Run number 1 of rule 'pdflatex'
@@ -238,21 +232,38 @@ nt1_n101.png>] [7 <../analysis/figures/panel_S1_points_dr10_n101.png>] [8 <../a
 nalysis/figures/panel_S2_mixed_dr100_n101.png>] [9 <../analysis/figures/panel_S
 3_gauss_dr1000_n101.png>] [10 <../analysis/figures/ladder_cc.png> <../analysis/
 figures/ladder_flux.png> <../analysis/figures/ladder_achdr.png> <../analysis/fi
-gures/ladder_resmad.png>] (./tables/summary_all.tex) [11] [12] (./main.aux) )</
-usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></u
-sr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></us
-r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr
-/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi10.pfb></usr
-/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmssi8.pfb></usr/
-local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr
-/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss0700.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1200.pfb></usr/local
-/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1440.pfb></usr/local/t
-exlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsx1000.pfb>
-Output written on main.pdf (12 pages, 4595422 bytes).
+gures/ladder_resmad.png>] (./tables/summary_all.tex) [11] [12]
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 117.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 117.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 117.
+
+[13] (./tables/quant_s0.tex) [14] (./tables/quant_s3.tex) [15] [16 <../analysis
+/figures/quant_achieved_dr_S0_point1.png> <../analysis/figures/quant_cross_corr
+elation_S0_point1.png> <../analysis/figures/quant_achieved_dr_S3_gauss_dr1000.p
+ng> <../analysis/figures/quant_cross_correlation_S3_gauss_dr1000.png>] [17]
+(./main.aux) )</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm
+/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmss10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mssi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mssi8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cm
+sy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cms
+y7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/
+msam10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss
+0700.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss10
+00.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1200
+.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1440.p
+fb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfsx1000.pfb
+>
+Output written on main.pdf (17 pages, 4830754 bytes).
 Transcript written on main.log.
 Latexmk: Getting log file 'main.log'
 Latexmk: Examining 'main.fls'

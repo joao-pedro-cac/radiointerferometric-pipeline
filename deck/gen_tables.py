@@ -30,6 +30,11 @@ def main():
         print("no results yet")
         return
     df = df.copy()
+    # baseline summary table: f64 rows only (quant rows go to quant_*.tex)
+    if "quantization" in df.columns:
+        is_f64 = df["quantization"].map(
+            lambda q: all(v == "float64" for v in q.values()))
+        df = df[is_f64]
     df["achDR"] = df["achieved_dr"].map(lambda v: f"{v:.3g}")
     df["resMAD"] = df["residual_mad"].map(lambda v: f"{v:.2e}")
     df["cc"] = df["cross_correlation"].map(lambda v: f"{v:.5f}")
@@ -43,6 +48,23 @@ def main():
         sub = df[df.dataset_name == sky]
         (outdir / f"summary_{sky.split('_')[0].lower()}.tex").write_text(
             tex_table(sub.sort_values("noise_seed")[cols].reset_index(drop=True), cols, header))
+
+    # quantization pilot table (from compare_schemes.py output)
+    qcsv = Path(__file__).resolve().parents[1] / "analysis/figures/quant_summary.csv"
+    if qcsv.exists():
+        import pandas as pd
+        q = pd.read_csv(qcsv)
+        q = q[q.scheme != "f64-baseline"].drop_duplicates(["sky", "scheme"])
+        for sky in sorted(q["sky"].unique()):
+            sub = q[q.sky == sky].copy()
+            sub["dcc"] = sub["d_cross_correlation"].map(lambda v: f"{v:+.1e}")
+            sub["dflux"] = sub["d_flux_conservation"].map(lambda v: f"{v:+.1e}")
+            sub["rMAD"] = sub["ratio_residual_mad"].map(lambda v: f"{v:.2f}")
+            sub["rDR"] = sub["ratio_achieved_dr"].map(lambda v: f"{v:.3f}")
+            cols2 = ["scheme", "dcc", "dflux", "rMAD", "rDR"]
+            hdr2 = ["scheme (v-d-p-m)", "$\\Delta$cc", "$\\Delta$flux", "resMAD/f64", "achDR/f64"]
+            (outdir / f"quant_{sky.split('_')[0].lower()}.tex").write_text(
+                tex_table(sub[cols2].reset_index(drop=True), cols2, hdr2))
     print(f"tables -> {outdir} ({len(df)} runs)")
 
 

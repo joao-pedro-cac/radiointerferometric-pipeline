@@ -87,17 +87,17 @@ CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
 \begin{frame}{Baseline across the ladder}
 \begin{columns}
 \begin{column}{0.5\textwidth}
-\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_cc.png}
-\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_flux.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_cc.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_flux.png}
 \end{column}
 \begin{column}{0.5\textwidth}
-\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_achdr.png}
-\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_resmad.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_achdr.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_resmad.png}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Baseline summary table}
+\begin{frame}[shrink=8]{Baseline summary table}
 \input{tables/summary_all.tex}
 \end{frame}
 
@@ -111,8 +111,60 @@ CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
   sources, and is where quantization of the model/PSF will matter most.
 \item Achieved DR is noise-limited, not pf-limited: $pf=10^{-4}$ stops far
   above the noise floor, so DR is set by $\sigma$.
-\item Next: the 16 quantization schemes on this same ladder, compared to these
-  f64 references within the 3-seed spread.
+\end{itemize}
+\end{frame}
+
+\section{Quantization pilot (S0, S3 $\times$ 16 schemes)}
+
+\begin{frame}{Casting audit: real IEEE-754 f16/bf16, not block-floating-point}
+\begin{itemize}
+\item Quantization = value rounding with ONE global scale per array
+  ($s=65503/\max|x|$ for f16 range protection); pipeline continues on the
+  de-scaled value $q/s$. Unit tests: outputs exactly f16-representable
+  (low bits zero), bf16 = f32 low-16-bit RNE truncation, rel err $\le 2^{-10}$ (f16),
+  $\le 2^{-7}$ (bf16); scale is a single scalar (a BFP scheme would use
+  per-block scales — asserted absent).
+\item Pipeline-level check on landed runs: model=f16 run shows bright-component
+  rel error $\approx 2\times10^{-2}$ (bf16 $6\times10^{-2}$), i.e. f16-level error
+  is really present in the stored arrays, not silently kept at f32.
+\end{itemize}
+\end{frame}
+
+\begin{frame}[shrink=8]{Pilot results — S0 (1 point, noise-limited)}
+\resizebox{\textwidth}{!}{\input{tables/quant_s0.tex}}
+\end{frame}
+
+\begin{frame}[shrink=8]{Pilot results — S3 (gaussians, DR 1000)}
+\resizebox{\textwidth}{!}{\input{tables/quant_s3.tex}}
+\end{frame}
+
+\begin{frame}{Pilot — achieved DR vs f64 baseline}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\includegraphics[height=0.33\textheight]{../analysis/figures/quant_achieved_dr_S0_point1.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/quant_cross_correlation_S0_point1.png}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[height=0.33\textheight]{../analysis/figures/quant_achieved_dr_S3_gauss_dr1000.png}
+\includegraphics[height=0.33\textheight]{../analysis/figures/quant_cross_correlation_S3_gauss_dr1000.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Interpretation}
+\sloppy
+\begin{itemize}
+\item f32 at any stage: indistinguishable from f64 (within seed spread) — safe.
+\item On noise-limited point fields (S0), quantizing the CLEAN model dominates:
+  resMAD $\times 9$ (f16) / $\times 43$ (bf16), achDR $\times 0.11$ / $\times 0.02$;
+  all-f16 $\times 10$, all-bf16 $\times 194$. Visibilities next (bf16 $\times 7.5$);
+  dirty/PSF mild.
+\item On extended-source fields (S3) the extended-emission residual floor masks
+  single-stage effects (ratios $\approx 1$), but full low-precision pipelines still
+  degrade achDR $\times 0.45$ (all-bf16) and cc by $\sim 10^{-3}$.
+\item Conclusion: per-stage f16 is safe for vis/dirty/PSF on point fields but the
+  clean model needs $>$ f16 mantissa; bf16 anywhere in the model/vis path is costly.
+\item Extended sweep (S1, S2, 3 seeds) goes to the remote server per runbook.
 \end{itemize}
 \end{frame}
 
