@@ -23,6 +23,9 @@ def load_results(root):
             entry["params"] = json.loads(pj.read_text())
         if mj.exists():
             entry["metrics"] = json.loads(mj.read_text())
+        pz = d / "probes.npz"
+        if pz.exists():
+            entry["probes"] = dict(np.load(pz))
         entry["run_dir"] = str(d)
         out.append(entry)
     return out

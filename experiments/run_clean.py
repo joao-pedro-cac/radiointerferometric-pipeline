@@ -40,7 +40,10 @@ def main():
     ap.add_argument("--q-dirty", default="float64", choices=["float64", "float32", "float16", "bfloat16"])
     ap.add_argument("--q-psf", default="float64", choices=["float64", "float32", "float16", "bfloat16"])
     ap.add_argument("--q-model", default="float64", choices=["float64", "float32", "float16", "bfloat16"])
-    ap.add_argument("--rescale-max", type=float, default=65503.0)
+    ap.add_argument("--rescale-max", type=float, default=65503.0,
+                    help="f16 rescale ceiling; 0 disables rescaling (raw cast, overflow -> inf)")
+    ap.add_argument("--probe", action=argparse.BooleanOptionalAction, default=True,
+                    help="record per-iteration log2 range probes to probes.npz")
     args = ap.parse_args()
 
     d = Path(args.dataset)
@@ -60,7 +63,8 @@ def main():
         gamma=args.gamma, pf=args.pf, maxiter=args.maxiter, loop_max=args.loop_max,
         eps=args.eps, nthreads=args.nthreads,
         q_vis=args.q_vis, q_dirty=args.q_dirty, q_psf=args.q_psf, q_model=args.q_model,
-        rescale_max=args.rescale_max)
+        rescale_max=args.rescale_max if args.rescale_max > 0 else None,
+        probe=args.probe)
     wall = time.time() - t0
 
     m = pipeline.compute_metrics(out["model"], out["residual"], out["psf"], truth)
@@ -70,7 +74,7 @@ def main():
                   nthreads=args.nthreads,
                   quantization=dict(vis=args.q_vis, dirty=args.q_dirty,
                                     psf=args.q_psf, model=args.q_model),
-                  rescale_max=args.rescale_max, npix=npix, cell_deg=cell,
+                  rescale_max=args.rescale_max, probe=bool(args.probe), npix=npix, cell_deg=cell,
                   nvis=int(vis.size), sigma_jy=meta.get("sigma_jy"),
                   field_dr=meta.get("field", {}).get("realized_dr"),
                   dataset_seed=meta.get("seed"), noise_seed=meta.get("noise_seed"))
@@ -78,6 +82,7 @@ def main():
                    converged_reason=out["converged_reason"],
                    n_components=out["n_components"],
                    psf_peak=out["psf_peak"],
+                   scales={k: float(v) for k, v in out["scales"].items()},
                    wall_time_s=wall, **{f"time_{k}": v for k, v in out["timing"].items()})
 
     # restored image for display (display frame)
@@ -95,6 +100,8 @@ def main():
         restored=restored.astype(np.float32),                                               # Jy/beam
         residual=operators.to_display(out["residual"]).astype(np.float32),                 # Jy/beam
         psf_lobe=(_psf_lobe(out["psf"]) / out["psf_peak"]).astype(np.float32))             # peak 1
+    if args.probe and out.get("probes") is not None:
+        np.savez_compressed(outdir / "probes.npz", **out["probes"].to_arrays())
     # params + metrics as sidecar files: the run dir is fully self-describing
     (outdir / "params.json").write_text(json.dumps(params, indent=2))
     (outdir / "metrics.json").write_text(json.dumps(metrics, indent=2))

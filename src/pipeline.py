@@ -14,7 +14,7 @@ import time
 
 import numpy as np
 
-from . import operators, clean, quantize, metrics
+from . import operators, clean, quantize, metrics, probe as probe_mod
 
 
 def _q_vis(vis, dtype, rescale_max, scale=None):
@@ -31,13 +31,31 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
                  gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10,
                  eps=1e-5, nthreads=8,
                  q_vis="float64", q_dirty="float64", q_psf="float64",
-                 q_model="float64", rescale_max=65503.0):
+                 q_model="float64", rescale_max=65503.0, probe=False):
     """Run dirty image + PSF + CLEAN loop with per-stage quantization.
 
     Returns dict with arrays (dirty, psf, model, residual — native frame) and
     metrics computed in the display frame, plus timing and loop info.
+    If probe=True, also returns "probes": a probe.ProbeCollector with a log2
+    histogram + stats snapshot of every stage array at init, after each major
+    cycle, and at the end (see src/probe.py for the snapshot convention).
     """
     t = {}
+    pc = probe_mod.ProbeCollector() if probe else None
+
+    def _snap(label, arrays, scales, scalars=None):
+        # scales keys must match arrays keys. "_cast" arrays (values as stored
+        # in the low-precision dtype) only exist when the scale != 1; otherwise
+        # the effective array already equals the cast array.
+        if pc is None:
+            return
+        arrays = dict(arrays)
+        for name, s in scales.items():
+            if s != 1.0 and name in arrays:
+                arrays[name + "_cast"] = arrays[name] * s
+        pc.snap(label, arrays=arrays,
+                scalars=dict(scalars or {}, **{f"s_{k}": v for k, v in scales.items()}))
+
     t0 = time.time()
     vis_eff, s_vis = _q_vis(vis, q_vis, rescale_max)
     wgt_eff, s_w = quantize.quantize_weights(wgt, q_vis, rescale_max)
@@ -50,6 +68,9 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
     psf_peak = float(np.max(psf))                    # f64 reference normalization
     psf_eff, s_psf = _q_img(psf, q_psf, rescale_max)
     t["imaging"] = time.time() - t0
+    _snap("init", dict(vis=vis_eff, wgt=wgt_eff, dirty=dirty_eff, psf=psf_eff),
+          dict(vis=s_vis, wgt=s_w, dirty=s_dirty, psf=s_psf),
+          scalars=dict(psf_peak=psf_peak))
 
     t0 = time.time()
     model, info = clean.hogbom(dirty_eff, psf_eff, gamma, pf, maxiter)
@@ -69,6 +90,10 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
         res_peak = float(np.max(np.abs(residual_eff))) / psf_peak
         res_mad = 1.4826 * np.median(np.abs(residual_eff / psf_peak
                                              - np.median(residual_eff / psf_peak)))
+        _snap(f"k{k}", dict(vis_resid=resid_vis, residual=residual_eff, model=model),
+              dict(vis_resid=s_vis, residual=s_dirty, model=s_model),
+              scalars=dict(k=k, res_peak=res_peak, res_mad=res_mad,
+                           n_components=int(np.count_nonzero(model))))
         if not np.isfinite(res_peak) or res_peak == 0.0:
             converged = "zero_residual"
             break
@@ -82,15 +107,22 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
         comp, _ = clean.hogbom(residual_eff, psf_eff, gamma, pf, maxiter)
         model, s_model = _q_img(model + comp, q_model, rescale_max)
     t["clean"] = time.time() - t0
+    _snap("final", dict(model=model, residual=residual_eff,
+                        dirty=dirty_eff, psf=psf_eff),
+          dict(model=s_model, residual=s_dirty, dirty=s_dirty, psf=s_psf),
+          scalars=dict(n_major_cycles=k))
 
     residual_beam = residual_eff / psf_peak
-    return dict(dirty=dirty_eff, psf=psf_eff, psf_peak=psf_peak,
-                model=model, residual=residual_beam,
-                n_major_cycles=int(k), converged_reason=converged,
-                n_components=int(np.count_nonzero(model)),
-                scales=dict(vis=s_vis, wgt=s_w, dirty=s_dirty, psf=s_psf,
-                            model=s_model),
-                timing=t)
+    out = dict(dirty=dirty_eff, psf=psf_eff, psf_peak=psf_peak,
+               model=model, residual=residual_beam,
+               n_major_cycles=int(k), converged_reason=converged,
+               n_components=int(np.count_nonzero(model)),
+               scales=dict(vis=s_vis, wgt=s_w, dirty=s_dirty, psf=s_psf,
+                           model=s_model),
+               timing=t)
+    if pc is not None:
+        out["probes"] = pc
+    return out
 
 
 def compute_metrics(model, residual, psf, truth):

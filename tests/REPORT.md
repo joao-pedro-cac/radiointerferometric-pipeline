@@ -1,7 +1,7 @@
 # Test report — v2 library gate
 
 Run: `cd code && $VENV_PATH/bin/python -m pytest tests/ -q` (pytest 8.4.2, numpy 1.26.4)
-Status: **31 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test)
+Status: **43 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test and the probe gate)
 
 | Area | Test | Analytic ground truth | Expected | Result |
 |---|---|---|---|---|
@@ -26,6 +26,11 @@ Status: **31 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test)
 | sky | WCS round-trip | radec→pix→radec identity | analytic | pass |
 | clean | hogbom recovers point source | model at source pixel, sum ≈ flux | synthetic PSF | pass |
 | clean | clean_loop converges | flux recovered ±5%, residual at noise level | synthetic + noise | pass |
+| probe | `test_log2_hist_*` | known |x| → exact per-octave bin counts; zeros dropped, out-of-range clipped into edge bins (counts sum = #nonzero); complex → modulus | analytic | pass |
+| probe | `test_array_stats_*` | max/min-nonzero/median/MAD exact on known array; f16/bf16 limit fractions exact; constants = 65504, 2⁻²⁴, 2⁻¹³³, f32max | analytic | pass |
+| probe | collector round-trip | `to_arrays`/`from_arrays` preserve labels, edges, hists, stats, scalars across heterogeneous snap keys | identity | pass |
+| probe | pipeline integration | `run_pipeline(probe=True)` returns snaps init/k*/final; hist sums = #nonzero of returned arrays; per-cycle scalars res_peak/res_mad/n_components/s_*; scales dict returned | synthetic ring uv | pass |
+| probe | cast arrays | with |vis|~1e6 and q-vis=f16 the rescale triggers (s_vis<1), `vis_cast` appears, modulus ≤ 65504·√2 (complex casts re/im separately), no bf16-range overflow | f16 envelope | pass |
 
 Notes:
 - Högbom's `3×MAD` threshold dominates when the dirty image is noise-dominated;
