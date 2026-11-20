@@ -65,6 +65,14 @@ def main():
             hdr2 = ["scheme (v-d-p-m)", "$\\Delta$cc", "$\\Delta$flux", "resMAD/f64", "achDR/f64"]
             (outdir / f"quant_{sky.split('_')[0].lower()}.tex").write_text(
                 tex_table(sub[cols2].reset_index(drop=True), cols2, hdr2))
+            # low-precision detail rows (all-f16 / all-bf16) for the detail frames
+            lp = sub[sub["scheme"].isin(["vf16-df16-pf16-mf16",
+                                         "vbf16-dbf16-pbf16-mbf16"])].copy()
+            lp["scheme"] = lp["scheme"].map(
+                {"vf16-df16-pf16-mf16": "all-f16", "vbf16-dbf16-pbf16-mbf16": "all-bf16"})
+            if len(lp):
+                (outdir / f"quant_lowprec_{sky.split('_')[0].lower()}.tex").write_text(
+                    tex_table(lp[cols2].reset_index(drop=True), cols2, hdr2))
     print(f"tables -> {outdir} ({len(df)} runs)")
 
 

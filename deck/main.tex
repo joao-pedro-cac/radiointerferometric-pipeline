@@ -160,6 +160,46 @@ CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
 \end{columns}
 \end{frame}
 
+\begin{frame}{Detail — all-f16 vs f64 on S3 (gaussians, DR 1000)}
+\begin{columns}
+\begin{column}{0.62\textwidth}
+\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-f16.png}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small metrics vs f64 (S3):\\[2pt]
+\resizebox{\textwidth}{!}{\input{tables/quant_lowprec_s3.tex}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Detail — all-bf16 vs f64 on S3 (gaussians, DR 1000)}
+\begin{columns}
+\begin{column}{0.62\textwidth}
+\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small metrics vs f64 (S3):\\[2pt]
+\resizebox{\textwidth}{!}{\input{tables/quant_lowprec_s3.tex}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Single-stage: visibilities (v) — f32 / f16 / bf16 across the ladder}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_v.png}
+\end{frame}
+
+\begin{frame}{Single-stage: dirty image (d) — f32 / f16 / bf16 across the ladder}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_d.png}
+\end{frame}
+
+\begin{frame}{Single-stage: PSF (p) — f32 / f16 / bf16 across the ladder}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_p.png}
+\end{frame}
+
+\begin{frame}{Single-stage: clean model (m) — f32 / f16 / bf16 across the ladder}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_m.png}
+\end{frame}
+
 \begin{frame}{Interpretation}
 \sloppy
 \begin{itemize}
