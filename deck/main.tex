@@ -138,6 +138,15 @@ CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
 \resizebox{\textwidth}{!}{\input{tables/quant_s3.tex}}
 \end{frame}
 
+\IfFileExists{tables/quant_s1.tex}{
+\begin{frame}[shrink=8]{Sweep — S1 (8 points, DR 10)}
+\resizebox{\textwidth}{!}{\input{tables/quant_s1.tex}}
+\end{frame}}{}
+\IfFileExists{tables/quant_s2.tex}{
+\begin{frame}[shrink=8]{Sweep — S2 (points + gaussians, DR 100)}
+\resizebox{\textwidth}{!}{\input{tables/quant_s2.tex}}
+\end{frame}}{}
+
 \begin{frame}{Pilot — achieved DR vs f64 baseline}
 \begin{columns}
 \begin{column}{0.5\textwidth}

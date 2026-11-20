@@ -407,6 +407,12 @@ INPUT tables/quant_s0.tex
 INPUT ./tables/quant_s3.tex
 INPUT ./tables/quant_s3.tex
 INPUT tables/quant_s3.tex
+INPUT ./tables/quant_s1.tex
+INPUT ./tables/quant_s1.tex
+INPUT tables/quant_s1.tex
+INPUT ./tables/quant_s2.tex
+INPUT ./tables/quant_s2.tex
+INPUT tables/quant_s2.tex
 INPUT ../analysis/figures/quant_achieved_dr_S0_point1.png
 INPUT ../analysis/figures/quant_achieved_dr_S0_point1.png
 INPUT ../analysis/figures/quant_achieved_dr_S0_point1.png
