@@ -42,7 +42,8 @@ def hogbom(dirty, psf, gamma=0.1, pf=1e-4, maxiter=10000, threshold_mad=3.0):
 
 
 def clean_loop(vis, uvw, freq, wgt, geom, psf,
-               gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10, eps=1e-5):
+               gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10, eps=1e-5,
+               nthreads=8):
     """Högbom + major-cycle residual re-imaging through the visibilities.
 
     vis : data visibilities in Jy (nrow, nchan); wgt : imaging weights.
@@ -54,7 +55,7 @@ def clean_loop(vis, uvw, freq, wgt, geom, psf,
                  psf_peak, n_major_cycles, converged_reason, n_components).
     """
     psf_peak = float(np.max(psf))
-    dirty = operators.vis2dirty(uvw, freq, vis, wgt, geom, eps)
+    dirty = operators.vis2dirty(uvw, freq, vis, wgt, geom, eps, nthreads)
     model, info = hogbom(dirty, psf, gamma, pf, maxiter)   # beam units == Jy delta
 
     ones = np.ones_like(wgt)
@@ -64,8 +65,8 @@ def clean_loop(vis, uvw, freq, wgt, geom, psf,
     converged = "max_major"
     while k < loop_max:
         k += 1
-        model_vis = operators.dirty2vis(model, uvw, freq, ones, geom, eps)
-        residual = operators.vis2dirty(uvw, freq, vis - model_vis, wgt, geom, eps)
+        model_vis = operators.dirty2vis(model, uvw, freq, ones, geom, eps, nthreads)
+        residual = operators.vis2dirty(uvw, freq, vis - model_vis, wgt, geom, eps, nthreads)
         res_peak = float(np.max(np.abs(residual))) / psf_peak   # Jy/beam
         res_mad = 1.4826 * np.median(np.abs(residual / psf_peak
                                              - np.median(residual / psf_peak)))

@@ -83,7 +83,9 @@ def main():
     ap.add_argument("--dr", type=float, default=1.0, help="intra-field DR = peak/faintest")
     ap.add_argument("--peak-flux", type=float, default=1.0, help="brightest source, Jy")
     ap.add_argument("--sigma", type=float, default=1e-4, help="per-visibility noise, Jy")
-    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--seed", type=int, default=42, help="sky-field seed (positions/fluxes)")
+    ap.add_argument("--noise-seed", type=int, default=None,
+                    help="noise seed (default: same as --seed; vary for seed-spread studies)")
     ap.add_argument("--uvcov", required=True, help="uv-coverage .npz from harvest_uvcov.py")
     ap.add_argument("--out", required=True, help="output dataset directory")
     ap.add_argument("--npix", type=int, default=2520)
@@ -107,6 +109,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     field = sky.sample_field(rng, args.n_point, args.n_gauss, args.dr,
                              args.peak_flux, args.ra0, args.dec0, args.fov_deg)
+    noise_rng = np.random.default_rng(args.noise_seed if args.noise_seed is not None else args.seed)
     sources = sky.to_sources(field, wcs, cell_arcsec)
     truth = sky.render(sources, args.npix)                    # display orientation, Jy/pixel
 
@@ -118,8 +121,8 @@ def main():
     ones = np.ones_like(weight)
     vis_clean = operators.dirty2vis(operators.to_native(truth), uvw, freq, ones, geom)
     # seeded complex Gaussian noise, sigma per component (vis in Jy)
-    noise = args.sigma * (rng.standard_normal(vis_clean.shape)
-                          + 1j * rng.standard_normal(vis_clean.shape)) / np.sqrt(2.0)
+    noise = args.sigma * (noise_rng.standard_normal(vis_clean.shape)
+                          + 1j * noise_rng.standard_normal(vis_clean.shape)) / np.sqrt(2.0)
     vis = vis_clean + noise
 
     # natural weights from sigma (w = 1/sigma^2); stored for the pipeline
@@ -135,7 +138,9 @@ def main():
     write_osm(out / "sky.osm", field, field["meta"]["freq0"], field["meta"]["spix"])
     write_settings(out / "settings.ini", "sky.osm", "obs.ms", args.telescope)
 
-    meta = dict(name=args.name, seed=args.seed, sigma_jy=args.sigma,
+    meta = dict(name=args.name, seed=args.seed,
+                noise_seed=args.noise_seed if args.noise_seed is not None else args.seed,
+                sigma_jy=args.sigma,
                 npix=args.npix, fov_deg=args.fov_deg, cell_deg=cell_deg,
                 ra0=args.ra0, dec0=args.dec0, uvcov=str(args.uvcov),
                 producer="ducc0-forward-v2", oskar_compatible=True,

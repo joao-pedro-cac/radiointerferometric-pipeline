@@ -18,8 +18,12 @@ def _check(dtype):
         raise ValueError(f"unknown dtype {dtype!r}, expected one of {DTYPES}")
 
 
-def quantize_array(arr, dtype, rescale_max=65503.0):
-    """Cast a real or complex array to `dtype`. Returns (cast_array, scale)."""
+def quantize_array(arr, dtype, rescale_max=65503.0, scale=None):
+    """Cast a real or complex array to `dtype`. Returns (cast_array, scale).
+
+    If `scale` is given (float16 re-quantization of an already-scaled array),
+    it is used instead of being re-estimated from the data.
+    """
     _check(dtype)
     arr = np.asarray(arr)
     if dtype == "float64":
@@ -27,25 +31,17 @@ def quantize_array(arr, dtype, rescale_max=65503.0):
     if dtype == "float32":
         return arr.astype(np.float32), 1.0
 
-    scale = 1.0
-    a = arr.astype(np.float32)
     if dtype == "float16":
-        amax = float(np.max(np.abs(a))) if a.size else 0.0
-        if rescale_max is not None and amax > rescale_max:
-            scale = rescale_max / amax
-            a = a * np.float32(scale)
-        out = a.astype(np.float16).astype(np.float32)   # store as f32, values are exact f16
+        if scale is None:
+            amax = float(np.max(np.abs(arr))) if arr.size else 0.0
+            scale = (rescale_max / amax) if (rescale_max is not None and amax > rescale_max) else 1.0
+        out = (arr.astype(np.float64) * scale).astype(np.float16).astype(np.float32)
         return out, scale
     if dtype == "bfloat16":
-        # round-to-nearest-even truncation of the low 16 bits of float32
-        u = a.view(np.uint32)
-        rounded = (u + np.uint32(0x7FFF) + ((u >> np.uint32(16)) & np.uint32(1))) >> np.uint32(16)
-        out = (rounded << np.uint32(16)).view(np.float32)
         if np.iscomplexobj(arr):
-            re = _bf16(a.real)
-            im = _bf16(a.imag)
-            return (re + 1j * im).astype(np.complex64), scale
-        return out, scale
+            a = arr.astype(np.complex64)
+            return (_bf16(a.real) + 1j * _bf16(a.imag)).astype(np.complex64), 1.0
+        return _bf16(arr.astype(np.float32)), 1.0
     raise AssertionError("unreachable")
 
 

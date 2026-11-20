@@ -1,0 +1,115 @@
+"""Full imaging pipeline with per-stage quantization.
+
+Pure orchestration over src modules: arrays in, dict of arrays+metrics out.
+No I/O. Quantization semantics: a stage quantized to dtype d stores
+cast(x * s) and the pipeline continues with the de-scaled value
+cast(x * s) / s — i.e. quantization acts as pure value rounding, with no
+scale bookkeeping in the math. `s` is chosen from the f64 max (f16 range
+protection) unless given.
+
+Stages: visibilities (and weights), dirty image, PSF, clean model, and the
+re-imaged residual visibilities inside the major loop.
+"""
+import time
+
+import numpy as np
+
+from . import operators, clean, quantize, metrics
+
+
+def _q_vis(vis, dtype, rescale_max, scale=None):
+    q, s = quantize.quantize_visibilities(vis, dtype, rescale_max, scale=scale)
+    return np.asarray(q / s, dtype=np.complex128), s
+
+
+def _q_img(img, dtype, rescale_max, scale=None):
+    q, s = quantize.quantize_array(img, dtype, rescale_max, scale=scale)
+    return np.asarray(q / s, dtype=np.float64), s
+
+
+def run_pipeline(vis, uvw, freq, wgt, geom,
+                 gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10,
+                 eps=1e-5, nthreads=8,
+                 q_vis="float64", q_dirty="float64", q_psf="float64",
+                 q_model="float64", rescale_max=65503.0):
+    """Run dirty image + PSF + CLEAN loop with per-stage quantization.
+
+    Returns dict with arrays (dirty, psf, model, residual — native frame) and
+    metrics computed in the display frame, plus timing and loop info.
+    """
+    t = {}
+    t0 = time.time()
+    vis_eff, s_vis = _q_vis(vis, q_vis, rescale_max)
+    wgt_eff, s_w = quantize.quantize_weights(wgt, q_vis, rescale_max)
+    wgt_eff = np.asarray(wgt_eff / s_w, dtype=np.float64)
+
+    dirty = operators.vis2dirty(uvw, freq, vis_eff, wgt_eff, geom, eps, nthreads)
+    dirty_eff, s_dirty = _q_img(dirty, q_dirty, rescale_max)
+
+    psf = operators.compute_psf(uvw, freq, wgt_eff, geom, eps, nthreads)
+    psf_peak = float(np.max(psf))                    # f64 reference normalization
+    psf_eff, s_psf = _q_img(psf, q_psf, rescale_max)
+    t["imaging"] = time.time() - t0
+
+    t0 = time.time()
+    model, info = clean.hogbom(dirty_eff, psf_eff, gamma, pf, maxiter)
+    model, s_model = _q_img(model, q_model, rescale_max)
+
+    ones = np.ones_like(wgt_eff)
+    residual = dirty_eff.copy()
+    k = 0
+    prev_peak = np.inf
+    converged = "max_major"
+    while k < loop_max:
+        k += 1
+        model_vis = operators.dirty2vis(model, uvw, freq, ones, geom, eps, nthreads)
+        resid_vis, _ = _q_vis(vis_eff - model_vis, q_vis, rescale_max, scale=s_vis)
+        residual = operators.vis2dirty(uvw, freq, resid_vis, wgt_eff, geom, eps, nthreads)
+        residual_eff, _ = _q_img(residual, q_dirty, rescale_max, scale=s_dirty)
+        res_peak = float(np.max(np.abs(residual_eff))) / psf_peak
+        res_mad = 1.4826 * np.median(np.abs(residual_eff / psf_peak
+                                             - np.median(residual_eff / psf_peak)))
+        if not np.isfinite(res_peak) or res_peak == 0.0:
+            converged = "zero_residual"
+            break
+        if res_peak < 3.0 * res_mad:
+            converged = "threshold"
+            break
+        if k > 1 and (prev_peak - res_peak) < 0.02 * prev_peak:
+            converged = "stall"
+            break
+        prev_peak = res_peak
+        comp, _ = clean.hogbom(residual_eff, psf_eff, gamma, pf, maxiter)
+        model, s_model = _q_img(model + comp, q_model, rescale_max)
+    t["clean"] = time.time() - t0
+
+    residual_beam = residual_eff / psf_peak
+    return dict(dirty=dirty_eff, psf=psf_eff, psf_peak=psf_peak,
+                model=model, residual=residual_beam,
+                n_major_cycles=int(k), converged_reason=converged,
+                n_components=int(np.count_nonzero(model)),
+                scales=dict(vis=s_vis, wgt=s_w, dirty=s_dirty, psf=s_psf,
+                            model=s_model),
+                timing=t)
+
+
+def compute_metrics(model, residual, psf, truth):
+    """Metrics in the display frame. model/residual/psf/truth: model & residual
+    native, psf 2x native, truth display. Returns dict of floats + beam."""
+    bmaj, bmin, pa = operators.synth_beam_from_psf(psf)
+    kern = operators.make_beam_kernel(bmaj, bmin, pa)
+    model_d = operators.to_display(model)
+    resid_d = operators.to_display(residual)
+    restored = operators.restore(model_d, kern)
+    true_restored = operators.restore(np.asarray(truth, np.float64), kern)
+    return dict(
+        cross_correlation=metrics.cross_correlation(restored, true_restored),
+        flux_conservation=metrics.flux_conservation(model_d, truth),
+        residual_rms=metrics.residual_rms(resid_d),
+        residual_mad=metrics.residual_mad(resid_d),
+        achieved_dr=metrics.achieved_dr(resid_d, float(restored.max())),
+        snr_db=metrics.snr_db(restored, true_restored),
+        beam_bmaj_px=float(bmaj), beam_bmin_px=float(bmin),
+        beam_area_px=float(operators.beam_area_px(bmaj, bmin)),
+        restored_peak=float(restored.max()),
+    )

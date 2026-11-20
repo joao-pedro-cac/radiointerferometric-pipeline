@@ -12,7 +12,6 @@ from dataclasses import dataclass
 import numpy as np
 import ducc0.wgridder as dg
 from astropy.convolution import convolve_fft
-from astropy.modeling import models, fitting
 
 FWHM = 2.0 * np.sqrt(2.0 * np.log(2.0))
 
@@ -42,29 +41,29 @@ def _prep(uvw, freq, wgt):
     return uvw, freq, wgt
 
 
-def vis2dirty(uvw, freq, vis, wgt, geom, eps=1e-5):
+def vis2dirty(uvw, freq, vis, wgt, geom, eps=1e-5, nthreads=8):
     """Visibilities -> dirty image on geom's grid (native orientation)."""
     uvw, freq, wgt = _prep(uvw, freq, wgt)
     vis = np.ascontiguousarray(vis, dtype=np.complex128)
     return dg.vis2dirty(uvw=uvw, freq=freq, vis=vis, wgt=wgt,
                         npix_x=geom.npix_x, npix_y=geom.npix_y,
                         pixsize_x=geom.pixsize_x, pixsize_y=geom.pixsize_y,
-                        epsilon=eps, do_wgridding=True, nthreads=1,
+                        epsilon=eps, do_wgridding=True, nthreads=nthreads,
                         double_precision_accumulation=True, verbosity=False)
 
 
-def dirty2vis(img, uvw, freq, wgt, geom, eps=1e-5):
+def dirty2vis(img, uvw, freq, wgt, geom, eps=1e-5, nthreads=8):
     """Image (native orientation) -> visibilities. Adjoint of vis2dirty."""
     uvw, freq, wgt = _prep(uvw, freq, wgt)
     img = np.ascontiguousarray(img, dtype=np.float64)
     return dg.dirty2vis(uvw=uvw, freq=freq, dirty=img, wgt=wgt,
                         pixsize_x=geom.pixsize_x, pixsize_y=geom.pixsize_y,
                         center_x=0, center_y=0,
-                        epsilon=eps, do_wgridding=True, nthreads=1,
+                        epsilon=eps, do_wgridding=True, nthreads=nthreads,
                         verbosity=False)
 
 
-def compute_psf(uvw, freq, wgt, geom, eps=1e-5):
+def compute_psf(uvw, freq, wgt, geom, eps=1e-5, nthreads=8):
     """PSF = dirty image of unit visibilities on a 2x padded grid (native)."""
     uvw, freq, wgt = _prep(uvw, freq, wgt)
     nvis = uvw.shape[0]
@@ -73,7 +72,7 @@ def compute_psf(uvw, freq, wgt, geom, eps=1e-5):
     return dg.vis2dirty(uvw=uvw, freq=freq, vis=ones, wgt=wgt,
                         npix_x=2 * geom.npix_x, npix_y=2 * geom.npix_y,
                         pixsize_x=geom.pixsize_x, pixsize_y=geom.pixsize_y,
-                        epsilon=eps, do_wgridding=True, nthreads=1,
+                        epsilon=eps, do_wgridding=True, nthreads=nthreads,
                         double_precision_accumulation=True, verbosity=False)
 
 
@@ -81,19 +80,35 @@ def compute_psf(uvw, freq, wgt, geom, eps=1e-5):
 # clean/restoring beam: fit the PSF main lobe, restore model to that resolution
 # ---------------------------------------------------------------------------
 
-def synth_beam_from_psf(psf, fit_halfwidth_px=32):
-    """Fit a 2-D Gaussian to the PSF main lobe -> (bmaj_px, bmin_px, pa_rad) FWHM."""
+def synth_beam_from_psf(psf):
+    """Main-lobe beam (bmaj_px, bmin_px, pa_rad) FWHM from half-max moments.
+
+    Only pixels above half the PSF peak enter the second-moment estimate, so
+    sidelobes cannot widen the beam. Robust and dependency-free.
+    """
     psf = np.asarray(psf, dtype=np.float64)
-    yx = np.unravel_index(np.argmax(psf), psf.shape)
-    h = fit_halfwidth_px
-    sl = (slice(max(yx[0] - h, 0), yx[0] + h + 1),
-          slice(max(yx[1] - h, 0), yx[1] + h + 1))
-    cut = psf[sl]
-    yy, xx = np.mgrid[:cut.shape[0], :cut.shape[1]]
-    p0 = models.Gaussian2D(cut.max(), cut.shape[1] // 2, cut.shape[0] // 2, 2.0, 2.0)
-    g = fitting.LevMarLSQFitter()(p0, xx, yy, cut)
-    sx, sy = abs(g.x_stddev.value), abs(g.y_stddev.value)
-    return FWHM * max(sx, sy), FWHM * min(sx, sy), float(g.theta.value)
+    iy, ix = np.unravel_index(np.argmax(psf), psf.shape)
+    pk = psf[iy, ix]
+    # half-max-clipped weights over the whole image: sidelobes (below half
+    # max) are excluded by the clip, so they cannot widen the beam
+    w = np.clip(psf - pk / 2.0, 0.0, None)
+    if w.sum() <= 0:
+        return 4.0, 4.0, 0.0
+    yy, xx = np.mgrid[:psf.shape[0], :psf.shape[1]]
+    wsum = w.sum()
+    mx, my = (w * xx).sum() / wsum, (w * yy).sum() / wsum
+    cxx = (w * (xx - mx) ** 2).sum() / wsum
+    cyy = (w * (yy - my) ** 2).sum() / wsum
+    cxy = (w * (xx - mx) * (yy - my)).sum() / wsum
+    # eigenvalues of the covariance matrix -> sigma along principal axes
+    tr, det = cxx + cyy, cxx * cyy - cxy * cxy
+    disc = max(tr * tr / 4 - det, 0.0)
+    l1, l2 = tr / 2 + np.sqrt(disc), tr / 2 - np.sqrt(disc)
+    pa = 0.5 * np.arctan2(2 * cxy, cxx - cyy)
+    # calibration: for a pure Gaussian, the half-max-clipped 1-D marginal
+    # second moment underestimates sigma^2 by a factor ~0.230 -> correct it
+    corr = 1.0 / np.sqrt(0.2300)
+    return FWHM * np.sqrt(max(l1, 1e-12)) * corr, FWHM * np.sqrt(max(l2, 1e-12)) * corr, float(pa)
 
 
 def beam_area_px(bmaj, bmin):
