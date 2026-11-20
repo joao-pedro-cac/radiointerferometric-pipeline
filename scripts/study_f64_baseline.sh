@@ -48,8 +48,8 @@ for spec in "${SKIES[@]}"; do
         --gamma 0.1 --pf 1e-4 --maxiter 10000 --loop-max 10 \
         --nthreads 2 --q-vis float64 --q-dirty float64 --q-psf float64 --q-model float64 \
         > "$run.log" 2>&1 &
-      jobs=$((jobs+1))
-      if [ "$jobs" -ge "$MAXJOBS" ]; then wait -n; jobs=$((jobs-1)); fi
+      # portable job pool (macOS bash 3.2 has no `wait -n`)
+      while [ "$(jobs -rp | wc -l | tr -d ' ')" -ge "$MAXJOBS" ]; do sleep 2; done
     fi
   done
 done
