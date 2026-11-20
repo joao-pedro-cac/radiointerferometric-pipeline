@@ -90,11 +90,11 @@ def main():
     np.savez_compressed(
         outdir / "results.npz",
         truth=truth.astype(np.float32),
-        dirty=operators.to_display(out["dirty"]).astype(np.float32),
-        model=operators.to_display(out["model"]).astype(np.float32),
-        restored=restored.astype(np.float32),
-        residual=operators.to_display(out["residual"]).astype(np.float32),
-        psf_lobe=_psf_lobe(out["psf"]).astype(np.float32))
+        dirty=(operators.to_display(out["dirty"]) / out["psf_peak"]).astype(np.float32),   # Jy/beam
+        model=operators.to_display(out["model"]).astype(np.float32),                       # Jy
+        restored=restored.astype(np.float32),                                               # Jy/beam
+        residual=operators.to_display(out["residual"]).astype(np.float32),                 # Jy/beam
+        psf_lobe=(_psf_lobe(out["psf"]) / out["psf_peak"]).astype(np.float32))             # peak 1
     # params + metrics as sidecar files: the run dir is fully self-describing
     (outdir / "params.json").write_text(json.dumps(params, indent=2))
     (outdir / "metrics.json").write_text(json.dumps(metrics, indent=2))

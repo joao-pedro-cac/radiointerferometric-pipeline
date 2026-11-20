@@ -12,7 +12,8 @@ def tex_table(df, cols, header, caption_rows=None):
     lines = ["\\begin{tabular}{" + "l" + "r" * (len(cols) - 1) + "}",
              "\\toprule", " & ".join(header) + " \\\\", "\\midrule"]
     for _, r in df.iterrows():
-        lines.append(" & ".join(str(r[c]) for c in cols) + " \\\\")
+        cells = [str(r[c]).replace("_", "\\_") for c in cols]
+        lines.append(" & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     return "\n".join(lines)
 

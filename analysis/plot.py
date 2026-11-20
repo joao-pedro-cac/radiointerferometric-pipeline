@@ -41,8 +41,9 @@ def _stretch(img, scale):
         return AsinhNorm(linear_width=peak / 100.0 if peak > 0 else 1.0)
     if scale == "log":
         pos = a[a > 0]
-        lo = np.nanpercentile(pos, 1) if pos.size else 1e-12
-        return SymLogNorm(linthresh=lo, vmin=lo, vmax=np.nanmax(a))
+        hi = np.nanmax(a) if a.size else 1.0
+        lo = max(np.nanpercentile(pos, 1) if pos.size else 1e-12, 1e-4 * hi)
+        return SymLogNorm(linthresh=lo, vmin=lo, vmax=hi)
     if scale == "symlog":
         peak = np.nanmax(np.abs(a)) or 1.0
         return SymLogNorm(linthresh=peak / 1000.0, vmin=-peak, vmax=peak)
@@ -82,10 +83,10 @@ def six_panel(truth, dirty, psf_lobe, model, restored, residual, beam=None,
               name="six_panel.png", suptitle=""):
     """Canonical figure: truth | dirty | PSF | clean model | restored | residual."""
     fig, axes = plt.subplots(2, 3, figsize=(15, 9.5))
-    panel(axes[0, 0], truth, "truth (Jy/pix)", scale="asinh")
+    panel(axes[0, 0], truth, "truth (Jy/pix)", scale="log")
     panel(axes[0, 1], dirty, "dirty image (Jy/beam)", scale="asinh")
     panel(axes[0, 2], psf_lobe, "PSF (lobe)", cmap=PSF_CMAP, scale="log")
-    panel(axes[1, 0], model, "CLEAN model (Jy)", scale="asinh")
+    panel(axes[1, 0], model, "CLEAN model (Jy)", scale="log")
     panel(axes[1, 1], restored, "restored (Jy/beam)", beam=beam,
           contours=truth, scale="asinh")
     panel(axes[1, 2], residual, "residual (Jy/beam)", cmap=RESID_CMAP, scale="symlog")
@@ -118,7 +119,9 @@ def metric_vs_dr(df, metric, ylabel, name, logy=False, ax=None):
         fig, ax = plt.subplots(figsize=(7, 5))
     else:
         fig = ax.figure
-    for sky, g in df.groupby("dataset_name"):
+    df = df.copy()
+    df["sky"] = df["dataset_name"].str.replace(r"_n\d+$", "", regex=True)
+    for sky, g in df.groupby("sky"):
         x = g["field_dr"].astype(float)
         ax.scatter(x, g[metric], label=sky, s=28, zorder=3)
     ax.set_xscale("log")
