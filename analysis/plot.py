@@ -36,16 +36,22 @@ def _save(fig, name):
 
 def _stretch(img, scale):
     a = np.asarray(img, np.float64)
+    if not np.isfinite(a).any():
+        return None                      # all-NaN panel (e.g. overflowed run): linear zeros
     if scale == "asinh":
-        peak = np.nanmax(np.abs(a))
-        return AsinhNorm(linear_width=peak / 100.0 if peak > 0 else 1.0)
+        peak = float(np.nanmax(np.abs(a)))
+        return AsinhNorm(linear_width=peak / 100.0 if np.isfinite(peak) and peak > 0 else 1.0)
     if scale == "log":
-        pos = a[a > 0]
-        hi = np.nanmax(a) if a.size else 1.0
-        lo = max(np.nanpercentile(pos, 1) if pos.size else 1e-12, 1e-4 * hi)
+        pos = a[np.isfinite(a) & (a > 0)]
+        hi = float(np.nanmax(a))
+        if not np.isfinite(hi) or hi <= 0:
+            hi = 1.0
+        lo = max(float(np.nanpercentile(pos, 1)) if pos.size else 1e-12, 1e-4 * hi)
         return SymLogNorm(linthresh=lo, vmin=lo, vmax=hi)
     if scale == "symlog":
-        peak = np.nanmax(np.abs(a)) or 1.0
+        peak = float(np.nanmax(np.abs(a)))
+        if not np.isfinite(peak) or peak <= 0:
+            peak = 1.0
         return SymLogNorm(linthresh=peak / 1000.0, vmin=-peak, vmax=peak)
     return None  # linear
 

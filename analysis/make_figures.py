@@ -33,7 +33,8 @@ def main():
     # one 6-panel figure per run
     for r in results:
         name = Path(r["run_dir"]).name
-        beam = (r["metrics"]["beam_bmaj_px"], r["metrics"]["beam_bmin_px"], 0.0)
+        bm = r["metrics"]["beam_bmaj_px"]
+        beam = (bm, r["metrics"]["beam_bmin_px"], 0.0) if np.isfinite(bm) else None
         pk = float(r["metrics"].get("psf_peak", 1.0))
         dirty = r["dirty"] / pk if np.nanmax(np.abs(r["dirty"])) > 1e6 else r["dirty"]
         psf_lobe = r["psf_lobe"] / pk if np.nanmax(np.abs(r["psf_lobe"])) > 1e6 else r["psf_lobe"]

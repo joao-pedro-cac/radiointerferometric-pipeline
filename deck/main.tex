@@ -1,311 +1,351 @@
 \documentclass[aspectratio=169,10pt]{beamer}
-\usetheme{default}
-\usecolortheme{default}
-\usepackage{graphicx}
+\usetheme[progressbar=frametitle, numbering=fraction]{metropolis}
+\usepackage[T1]{fontenc}
+\usepackage[scaled=0.92]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
 \usepackage{booktabs}
 \usepackage{amsmath}
-\usepackage[T1]{fontenc}
+\metroset{block=fill}
 \setbeamertemplate{navigation symbols}{}
-\setbeamerfont{frametitle}{size=\large}
-\title[Low-precision CLEAN]{Quantizing the Hogbom CLEAN pipeline to float16/bfloat16\\-- float64 baseline first}
-\author{2026 internship -- J. archive, v2 restart}
+\setbeamerfont{title}{size=\LARGE}
+\setbeamerfont{subtitle}{size=\normalsize}
+
+\title[Low-precision CLEAN]{Quantizing Högbom CLEAN to float16/bfloat16}
+\subtitle{float64 baseline first, then per-stage quantization on a sky ladder}
+\author{2026 internship — J. archive, v2 restart}
 \date{\today}
 
 \begin{document}
 
-\begin{frame}
-\titlepage
+\begin{frame}[plain]
+\centering
+{\LARGE\bfseries Quantizing Högbom CLEAN to float16/bfloat16\par}
+\vspace{0.6em}
+{\normalsize float64 baseline first, then per-stage quantization on a sky ladder\par}
+\vspace{3em}
+{\normalsize 2026 internship — J. archive, v2 restart \hspace{3em} \today\par}
 \end{frame}
 
 \begin{frame}{Goal and perimeter}
 \begin{itemize}
-\item Goal: measure the effect of quantizing each stage of the Hogbom CLEAN
-  pipeline (visibilities, dirty image, PSF, clean model) to float16/bfloat16,
-  against a float64 baseline.
+\item Goal: measure the effect of quantizing each stage of the Högbom CLEAN
+  pipeline — visibilities, dirty image, PSF, clean model — to
+  \textbf{float16 / bfloat16}, against a float64 baseline.
 \item Rule for this restart: \textbf{no quantization claim before the f64
-  baseline is clean, deterministic, and unit-tested.}
+  baseline is clean, deterministic, and unit-tested} (44 tests green).
 \item Perimeter: MeerKAT 1 h / 4 ch / 1.4 GHz uv-coverage, 1\textdegree{} FOV,
-  2520$^2$ images, $\sigma=10^{-4}$ Jy/vis, point + Gaussian sky ladder
-  (DR 1$\to$1000), Hogbom. OSKAR-compatible datasets (same layout; canonical
-  re-simulation via OSKAR/singularity on a host that has it).
+  2520$^2$ images, $\sigma=10^{-4}$ Jy/vis, point + Gaussian sky ladder,
+  Högbom $\gamma=0.1$, $pf=10^{-4}$, 10 major cycles.
+\item Datasets are OSKAR-compatible (`.osm` + `settings.ini` + OSKAR layout);
+  canonical re-simulation via OSKAR/singularity on a host that has it.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Experimental design}
+\begin{frame}{Experimental design and trust}
 \begin{itemize}
-\item uv-coverage harvested from a real OSKAR dataset (725,760 rows $\times$ 4 ch);
-  visibilities forward-modelled with ducc0 (exact adjoint gridding) + seeded
-  Gaussian noise $\to$ deterministic datasets, reproducible from seed.
-\item Sky ladder: S0 = 1 point (DR 1), S1 = 8 points (DR 10),
-  S2 = 6 points + 4 gaussians (DR 100), S3 = 4 points + 8 gaussians (DR 1000).
-  Realized DR pinned exactly; 3 noise seeds per sky.
-\item CLEAN tuning (validated on the legacy archive): Högbom
-  $\gamma=0.1$, $pf=10^{-4}$, 10 major cycles; residual re-imaged through the
-  visibilities each major cycle.
-\item Metrics (all unit-tested, analytic ground truths, 44 tests green):
-  cross-correlation of restored images, flux conservation
-  $\sum m/\sum t$, residual MAD (Jy/beam), achieved DR = peak/residual-MAD.
-\item Every run also records per-iteration \textbf{log2 range probes}
-  (probes.npz): histograms of $|x|$ per stage (vis / dirty / PSF / model /
-  residual) at init and after each major cycle, plus per-cycle
+\item Deterministic datasets: visibilities forward-modelled with ducc0 on a
+  uv-coverage harvested from a real OSKAR dataset + seeded noise; reproducible
+  from seed. Cross-study reproducibility verified to float noise.
+\item Sky ladder: S0 = 1 point (DR 1) → S1 = 8 points (DR 10) → S2 = mixed
+  (DR 100) → S3 = gaussians (DR 1000); v3 adds S5 (24 points, DR $10^6$) and
+  S7 (1 point at $10^6$ Jy, $|V|_{max} > 65504$).
+\item Metrics (unit-tested against analytic ground truths): restored
+  cross-correlation, flux conservation, residual MAD (Jy/beam), achieved DR.
+\item Every run records \textbf{per-iteration log2 range probes} (probes.npz):
+  histograms of $|x|$ per stage at each major cycle + per-cycle
   res\_peak / res\_mad / n\_components / quantization scales.
 \end{itemize}
 \end{frame}
 
 \begin{frame}{Pipeline and quantization points}
 \begin{center}
-visibilities $\xrightarrow{\;q_{vis}\;}$ dirty image $\xrightarrow{\;q_{dirty}\;}$
-CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
+visibilities $\xrightarrow{q_{vis}}$ dirty $\xrightarrow{q_{dirty}}$
+CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \end{center}
 \begin{itemize}
-\item Quantization = IEEE-754 value rounding (vectorized; f16 with rescale to
-  65503 for range), applied per stage; pipeline math stays in f64 on the
-  de-scaled values.
-\item Self-describing results: every run writes arrays + all parameters +
-  metrics (results.npz, params.json, metrics.json).
+\item Quantization = IEEE-754 \textbf{value rounding}, vectorized, ONE global
+  scale per array for f16 range protection ($s=65503/\max|x|$); the pipeline
+  continues in f64 on the de-scaled value $q/s$. Raw cast (scale off) kept as
+  a controlled experiment mode.
+\item Casting audit (unit tests): outputs exactly f16-representable, bf16 =
+  f32 low-16-bit round-to-nearest-even, rel err $\le 2^{-10}$ (f16) /
+  $2^{-7}$ (bf16); global scalar scale asserted (not block-floating-point).
+\item Self-describing runs: arrays + params + metrics + probes; even NaN runs
+  are saved with an error note.
 \end{itemize}
 \end{frame}
 
 \section{float64 baseline}
 
-\begin{frame}{Baseline: S0 (1 point source, DR 1) — metrics}
-\input{tables/summary_s0.tex}
-\end{frame}
-
-\begin{frame}{Baseline: S0 — images}
-\includegraphics[height=0.80\textheight]{../analysis/figures/panel_S0_point1_n101.png}
-\end{frame}
-
-\begin{frame}{Baseline: S1 (8 points, DR 10) — images}
-\includegraphics[height=0.80\textheight]{../analysis/figures/panel_S1_points_dr10_n101.png}
-\end{frame}
-
-\begin{frame}{Baseline: S2 (points + gaussians, DR 100) — images}
-\includegraphics[height=0.80\textheight]{../analysis/figures/panel_S2_mixed_dr100_n101.png}
-\end{frame}
-
-\begin{frame}{Baseline: S3 (gaussians, DR 1000) — images}
-\includegraphics[height=0.80\textheight]{../analysis/figures/panel_S3_gauss_dr1000_n101.png}
-\end{frame}
-
-\begin{frame}{Baseline across the ladder}
+\begin{frame}{Baseline: deterministic and noise-limited}
 \begin{columns}
-\begin{column}{0.5\textwidth}
-\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_cc.png}
-\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_flux.png}
+\begin{column}{0.49\textwidth}
+\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_cc.png}
 \end{column}
-\begin{column}{0.5\textwidth}
-\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_achdr.png}
-\includegraphics[height=0.33\textheight]{../analysis/figures/ladder_resmad.png}
+\begin{column}{0.49\textwidth}
+\includegraphics[height=0.36\textheight]{../analysis/figures/ladder_achdr.png}
+\end{column}
+\end{columns}
+\small
+\begin{itemize}
+\item Point fields (S0, S1): CLEAN essentially exact — cc $=1$, flux $=1$,
+  residual at the noise floor $\sigma/\sqrt{N}$; seed spread $\sim 10^{-6}$.
+\item Gaussian fields (S2, S3): delta-Högbom leaves an extended-emission
+  residual above the noise floor (achDR $7\times10^5 \to 9\times10^4$).
+\item Images per sky in appendix A; summary tables in appendix B.
+\end{itemize}
+\end{frame}
+
+\section{Quantization pilot — 16 schemes on S0–S3}
+
+\begin{frame}{f32 is invisible; the CLEAN model stage dominates}
+\includegraphics[width=0.72\textwidth]{../analysis/figures/stage_m.png}
+\begin{itemize}
+\item On noise-limited point fields, quantizing the \textbf{model} to f16 costs
+  resMAD $\times 9$, achDR $\times 0.11$; bf16 $\times 43$ / $\times 0.02$.
+\item f32 at any stage is indistinguishable from f64 (within seed spread).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Visibilities come next; dirty/PSF are mild}
+\includegraphics[width=0.72\textwidth]{../analysis/figures/stage_v.png}
+\begin{itemize}
+\item Single-stage f16 on visibilities: resMAD $\times 1.5$; bf16 $\times 7.5$
+  on S0. Dirty/PSF stages: ratios $\approx 1$ (appendix C).
+\item On extended fields (S3) the emission residual floor masks single-stage
+  effects — full pipelines still degrade (next frame).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Full low-precision pipelines compound the damage}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/quant_achieved_dr_S0_point1.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/quant_achieved_dr_S3_gauss_dr1000.png}
+\end{column}
+\end{columns}
+\begin{itemize}
+\item all-f16: achDR $\times 0.10$ (S0), $\times 0.93$ (S3); all-bf16:
+  $\times 0.005$ (S0), $\times 0.44$ (S3) — bf16's 8-bit mantissa hurts most
+  where the model carries the flux.
+\item Scheme tables and per-scheme images in appendix B/D.
+\end{itemize}
+\end{frame}
+
+\section{v3 sweep pilot — range stress and per-iteration probes}
+
+\begin{frame}{v3 design: push the data range beyond f16, and probe it}
+\begin{itemize}
+\item \textbf{S5}: 24 points, DR $10^6$ — model spans 20 octaves vs the f16
+  11-bit mantissa; faint components vs the $2^{-10}$-of-peak ulp.
+\item \textbf{S7}: 1 point at $10^6$ Jy — $|V|_{max}=10^6 > 65504$: raw f16 cast
+  overflows (legacy NaN mode); rescaled cast pins the peak at 65503 (ulp 32).
+\item Schemes: f64 / all-f16 (rescaled) / all-f16-raw / all-bf16 / model-f16,
+  all with log2 range probes per variable per major cycle.
+\end{itemize}
+\end{frame}
+
+\IfFileExists{../analysis/figures/detail_S7_point_peak1e6_schemes.png}{%
+\begin{frame}{S7 ($10^6$ Jy point) — images by scheme}
+\includegraphics[height=0.86\textheight]{../analysis/figures/detail_S7_point_peak1e6_schemes.png}
+\end{frame}}{}
+
+\begin{frame}{S7 outcome: rescaled f16 loses 6 orders of DR; raw cast NaNs}
+\begin{columns}
+\begin{column}{0.52\textwidth}
+\begin{itemize}
+\item f64: resMAD $3.8\times10^{-8}$, achDR $2.6\times10^{13}$.
+\item all-f16: resMAD $\times 2.6\times10^6$, achDR $\times 4\times10^{-7}$ —
+  ulp 32 at the pinned peak re-grids into the residual.
+\item all-bf16 $8\times$ worse (ulp 256); model-f16 alone $\times 1.8\times10^6$.
+\item all-f16-raw: inf $\to$ NaN at k=1 (saved, not crashed).
+\end{itemize}
+\end{column}
+\begin{column}{0.46\textwidth}
+\IfFileExists{../analysis/figures/probe_S7_point_peak1e6_n101_allf16_curves.png}{%
+\includegraphics[height=0.30\textheight]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16_curves.png}\\[2pt]
+\includegraphics[height=0.30\textheight]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16raw_curves.png}}{}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}[shrink=8]{Baseline summary table}
-\input{tables/summary_all.tex}
-\end{frame}
-
-\begin{frame}{What the f64 baseline permits us to claim}
+\IfFileExists{../analysis/figures/probe_cmp_S7_point_peak1e6.png}{%
+\begin{frame}{S7 probes — the mechanism, per variable per cycle}
+\includegraphics[height=0.58\textheight]{../analysis/figures/probe_cmp_S7_point_peak1e6.png}
+\small
 \begin{itemize}
-\item On point-source fields (S0, S1): CLEAN is essentially exact
-  (cc $=1$, flux $=1$, residual at the noise floor $\sigma/\sqrt{N}$) —
-  quantization effects here are pure numerics, measurable cleanly.
-\item On Gaussian fields (S2, S3): delta-Högbom leaves an extended-emission
-  residual above the noise floor — this bounds any claim about extended
-  sources, and is where quantization of the model/PSF will matter most.
-\item Achieved DR is noise-limited, not pf-limited: $pf=10^{-4}$ stops far
-  above the noise floor, so DR is set by $\sigma$.
+\item f64 residual waterfall descends log2 $+13 \to -23$ over k1–k10;
+  all-f16 stalls at $\sim 2^{4}$; all-f16raw vis\_resid is one column clipped
+  at the edge (= inf). Cyan lines: f16 max $2^{16}$ / subnormal $2^{-24}$.
 \end{itemize}
-\end{frame}
-
-\section{Quantization pilot (S0, S3 $\times$ 16 schemes)}
-
-\begin{frame}{Casting audit: real IEEE-754 f16/bf16, not block-floating-point}
-\begin{itemize}
-\item Quantization = value rounding with ONE global scale per array
-  ($s=65503/\max|x|$ for f16 range protection); pipeline continues on the
-  de-scaled value $q/s$. Unit tests: outputs exactly f16-representable
-  (low bits zero), bf16 = f32 low-16-bit RNE truncation, rel err $\le 2^{-10}$ (f16),
-  $\le 2^{-7}$ (bf16); scale is a single scalar (a BFP scheme would use
-  per-block scales — asserted absent).
-\item Pipeline-level check on landed runs: model=f16 run shows bright-component
-  rel error $\approx 2\times10^{-2}$ (bf16 $6\times10^{-2}$), i.e. f16-level error
-  is really present in the stored arrays, not silently kept at f32.
-\end{itemize}
-\end{frame}
-
-\begin{frame}[shrink=8]{Pilot results — S0 (1 point, noise-limited)}
-\resizebox{\textwidth}{!}{\input{tables/quant_s0.tex}}
-\end{frame}
-
-\begin{frame}[shrink=8]{Pilot results — S3 (gaussians, DR 1000)}
-\resizebox{\textwidth}{!}{\input{tables/quant_s3.tex}}
-\end{frame}
-
-\IfFileExists{tables/quant_s1.tex}{
-\begin{frame}[shrink=8]{Sweep — S1 (8 points, DR 10)}
-\resizebox{\textwidth}{!}{\input{tables/quant_s1.tex}}
-\end{frame}}{}
-\IfFileExists{tables/quant_s2.tex}{
-\begin{frame}[shrink=8]{Sweep — S2 (points + gaussians, DR 100)}
-\resizebox{\textwidth}{!}{\input{tables/quant_s2.tex}}
-\end{frame}}{}
-
-\begin{frame}{Pilot — achieved DR vs f64 baseline}
-\begin{columns}
-\begin{column}{0.5\textwidth}
-\includegraphics[height=0.33\textheight]{../analysis/figures/quant_achieved_dr_S0_point1.png}
-\includegraphics[height=0.33\textheight]{../analysis/figures/quant_cross_correlation_S0_point1.png}
-\end{column}
-\begin{column}{0.5\textwidth}
-\includegraphics[height=0.33\textheight]{../analysis/figures/quant_achieved_dr_S3_gauss_dr1000.png}
-\includegraphics[height=0.33\textheight]{../analysis/figures/quant_cross_correlation_S3_gauss_dr1000.png}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Detail — all-f16 vs f64 on S3 (gaussians, DR 1000)}
-\begin{columns}
-\begin{column}{0.62\textwidth}
-\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-f16.png}
-\end{column}
-\begin{column}{0.36\textwidth}
-\small metrics vs f64 (S3):\\[2pt]
-\resizebox{\textwidth}{!}{\input{tables/quant_lowprec_s3.tex}}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Detail — all-bf16 vs f64 on S3 (gaussians, DR 1000)}
-\begin{columns}
-\begin{column}{0.62\textwidth}
-\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png}
-\end{column}
-\begin{column}{0.36\textwidth}
-\small metrics vs f64 (S3):\\[2pt]
-\resizebox{\textwidth}{!}{\input{tables/quant_lowprec_s3.tex}}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Single-stage: visibilities (v) — f32 / f16 / bf16 across the ladder}
-\includegraphics[width=\textwidth]{../analysis/figures/stage_v.png}
-\end{frame}
-
-\begin{frame}{Single-stage: dirty image (d) — f32 / f16 / bf16 across the ladder}
-\includegraphics[width=\textwidth]{../analysis/figures/stage_d.png}
-\end{frame}
-
-\begin{frame}{Single-stage: PSF (p) — f32 / f16 / bf16 across the ladder}
-\includegraphics[width=\textwidth]{../analysis/figures/stage_p.png}
-\end{frame}
-
-\begin{frame}{Single-stage: clean model (m) — f32 / f16 / bf16 across the ladder}
-\includegraphics[width=\textwidth]{../analysis/figures/stage_m.png}
-\end{frame}
-
-\begin{frame}{Interpretation}
-\sloppy
-\begin{itemize}
-\item f32 at any stage: indistinguishable from f64 (within seed spread) — safe.
-\item On noise-limited point fields (S0), quantizing the CLEAN model dominates:
-  resMAD $\times 9$ (f16) / $\times 43$ (bf16), achDR $\times 0.11$ / $\times 0.02$;
-  all-f16 $\times 10$, all-bf16 $\times 194$. Visibilities next (bf16 $\times 7.5$);
-  dirty/PSF mild.
-\item On extended-source fields (S3) the extended-emission residual floor masks
-  single-stage effects (ratios $\approx 1$), but full low-precision pipelines still
-  degrade achDR $\times 0.45$ (all-bf16) and cc by $\sim 10^{-3}$.
-\item Conclusion: per-stage f16 is safe for vis/dirty/PSF on point fields but the
-  clean model needs $>$ f16 mantissa; bf16 anywhere in the model/vis path is costly.
-\item Extended sweep (S1, S2, 3 seeds) goes to the remote server per runbook.
-\end{itemize}
-\end{frame}
-
-\section{v3 sweep pilot — range stress + per-iteration probes}
-
-\begin{frame}{v3 pilot — why and what}
-\begin{itemize}
-\item Open questions from the pilot: what happens when the data range exceeds
-  the f16 range, and what is the actual range of each variable
-  (vis / dirty / PSF / model / residual) at each CLEAN iteration?
-\item New fields: S5 = 24 points, DR $10^6$ (model image spans 20 octaves vs the
-  f16 11-bit mantissa); S7 = 1 point at $10^6$ Jy ($|V|_{max}=10^6 > 65504$:
-  raw f16 cast overflows; rescaled cast pushes the $\sigma=10^{-4}$ noise into
-  f16 subnormals). S2 kept as reference. $\sigma=10^{-4}$ Jy, seed 101.
-\item Schemes: f64, all-f16 (rescaled), all-f16-raw ($--$rescale-max 0, the
-  controlled legacy-bug mode), all-bf16, model-f16.
-\item Every run now records \textbf{probes}: log2 histograms of $|x|$ (fixed
-  edges, 1 bin/octave) of every stage array at init and after each major cycle,
-  plus per-cycle res\_peak / res\_mad / n\_components / scales —
-  saved to probes.npz (unit-tested, 43 tests green).
-\end{itemize}
-\end{frame}
-
-\IfFileExists{tables/pilot_v3_S2_mixed_dr100.tex}{%
-\begin{frame}[shrink=8]{v3 pilot — S2 (mixed, DR 100): metrics by scheme}
-\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S2_mixed_dr100.tex}}
-\end{frame}}{}
-
-\IfFileExists{tables/pilot_v3_S5_points_dr1e6.tex}{%
-\begin{frame}[shrink=8]{v3 pilot — S5 (24 points, DR $10^6$): metrics by scheme}
-\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S5_points_dr1e6.tex}}
-\end{frame}}{}
-
-\IfFileExists{tables/pilot_v3_S7_point_peak1e6.tex}{%
-\begin{frame}[shrink=8]{v3 pilot — S7 (1 point, $10^6$ Jy): metrics by scheme}
-\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S7_point_peak1e6.tex}}
-\end{frame}}{}
-
-\IfFileExists{../analysis/figures/probe_cmp_S2_mixed_dr100.png}{%
-\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S2}
-\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S2_mixed_dr100.png}
 \end{frame}}{}
 
 \IfFileExists{../analysis/figures/probe_cmp_S5_points_dr1e6.png}{%
-\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S5 (DR $10^6$)}
-\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S5_points_dr1e6.png}
+\begin{frame}{S5 (DR $10^6$) — faint components are rounded away}
+\includegraphics[height=0.58\textheight]{../analysis/figures/probe_cmp_S5_points_dr1e6.png}
+\small
+\begin{itemize}
+\item f64 finds 2060 components down to $2^{-23}$ Jy; all-f16 keeps 540 —
+  resMAD $\times 5.2$, achDR $\times 0.19$, stall at k=4 (bf16 $\times 27$).
+\end{itemize}
 \end{frame}}{}
 
-\IfFileExists{../analysis/figures/probe_cmp_S7_point_peak1e6.png}{%
-\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S7 ($10^6$ Jy)}
-\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S7_point_peak1e6.png}
+\begin{frame}{Conclusions and what the remote batch adds}
+\begin{itemize}
+\item \textbf{Claimable now}: f32 is safe everywhere; f16 is safe on vis/dirty/
+  PSF at these flux levels but not on the model; bf16 needs care anywhere in
+  the model/vis path; range stress (peak $\gtrsim 65504$) is handled by the
+  global rescale at the price of ulp-at-peak error, and raw casting is simply
+  broken (inf/NaN) — matching the legacy archive's anomalies.
+\item Every effect above is visible in the per-iteration log2 probes, so the
+  mechanism is auditable per run.
+\item Remote batch (runbook in \texttt{code/scripts/README.md}): noise ladder
+  $\sigma\in\{10^{-2},10^{-4},10^{-6}\}$ on S2, S6 gaussians DR $10^5$, seeds
+  101–103 → metric-vs-$\sigma$ / metric-vs-DR / metric-vs-iteration graphs
+  with error bars.
+\end{itemize}
+\end{frame}
+
+\appendix
+
+\section*{Appendix}
+
+\section{Appendix A — baseline images (6-panel per sky)}
+
+\begin{frame}{A — S0 (1 point, DR 1)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S0_point1_n101.png}
+\end{frame}
+\begin{frame}{A — S1 (8 points, DR 10)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S1_points_dr10_n101.png}
+\end{frame}
+\begin{frame}{A — S2 (points + gaussians, DR 100)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S2_mixed_dr100_n101.png}
+\end{frame}
+\begin{frame}{A — S3 (gaussians, DR 1000)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S3_gauss_dr1000_n101.png}
+\end{frame}
+
+\section{Appendix B — result tables}
+
+\IfFileExists{tables/summary_all.tex}{%
+\begin{frame}[shrink=8]{B — f64 baseline summary (all seeds)}
+\resizebox{\textwidth}{!}{\input{tables/summary_all.tex}}
+\end{frame}}{}
+\IfFileExists{tables/quant_s0.tex}{%
+\begin{frame}[shrink=8]{B — pilot vs f64, S0}
+\resizebox{\textwidth}{!}{\input{tables/quant_s0.tex}}
+\end{frame}}{}
+\IfFileExists{tables/quant_s3.tex}{%
+\begin{frame}[shrink=8]{B — pilot vs f64, S3}
+\resizebox{\textwidth}{!}{\input{tables/quant_s3.tex}}
+\end{frame}}{}
+\IfFileExists{tables/quant_s1.tex}{%
+\begin{frame}[shrink=8]{B — sweep vs f64, S1}
+\resizebox{\textwidth}{!}{\input{tables/quant_s1.tex}}
+\end{frame}}{}
+\IfFileExists{tables/quant_s2.tex}{%
+\begin{frame}[shrink=8]{B — sweep vs f64, S2}
+\resizebox{\textwidth}{!}{\input{tables/quant_s2.tex}}
+\end{frame}}{}
+\IfFileExists{tables/pilot_v3_S2_mixed_dr100.tex}{%
+\begin{frame}[shrink=8]{B — v3 pilot, S2 (with scales + stop reason)}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S2_mixed_dr100.tex}}
+\end{frame}}{}
+\IfFileExists{tables/pilot_v3_S5_points_dr1e6.tex}{%
+\begin{frame}[shrink=8]{B — v3 pilot, S5 (DR $10^6$)}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S5_points_dr1e6.tex}}
+\end{frame}}{}
+\IfFileExists{tables/pilot_v3_S7_point_peak1e6.tex}{%
+\begin{frame}[shrink=8]{B — v3 pilot, S7 ($10^6$ Jy)}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S7_point_peak1e6.tex}}
 \end{frame}}{}
 
-\IfFileExists{../analysis/figures/probe_S7_point_peak1e6_n101_allf16raw_curves.png}{%
-\begin{frame}{v3 probes — per-cycle curves on S7: rescaled f16 vs raw f16}
+\section{Appendix C — per-stage and ladder detail}
+
+\begin{frame}{C — single-stage dirty (d) and PSF (p)}
 \begin{columns}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16_curves.png}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_d.png}
 \end{column}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16raw_curves.png}
+\includegraphics[width=\textwidth]{../analysis/figures/stage_p.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{C — baseline ladder, flux and residual MAD}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/ladder_flux.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/ladder_resmad.png}
+\end{column}
+\end{columns}
+\end{frame}
+
+\section{Appendix D — low-precision detail images}
+
+\IfFileExists{../analysis/figures/detail_S3_gauss_dr1000_all-f16.png}{%
+\begin{frame}{D — all-f16 vs f64 on S3}
+\includegraphics[height=0.82\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-f16.png}
+\end{frame}}{}
+\IfFileExists{../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png}{%
+\begin{frame}{D — all-bf16 vs f64 on S3}
+\includegraphics[height=0.82\textheight]{../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png}
+\end{frame}}{}
+\IfFileExists{../analysis/figures/detail_S5_points_dr1e6_schemes.png}{%
+\begin{frame}{D — S5 (DR $10^6$) images by scheme}
+\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S5_points_dr1e6_schemes.png}
+\end{frame}}{}
+\IfFileExists{../analysis/figures/detail_S2_mixed_dr100_schemes.png}{%
+\begin{frame}{D — S2 images by scheme}
+\includegraphics[height=0.80\textheight]{../analysis/figures/detail_S2_mixed_dr100_schemes.png}
+\end{frame}}{}
+
+\section{Appendix E — probe detail and metric bars}
+
+\IfFileExists{../analysis/figures/probe_cmp_S2_mixed_dr100.png}{%
+\begin{frame}{E — v3 probes on S2 (reference field)}
+\includegraphics[height=0.80\textheight]{../analysis/figures/probe_cmp_S2_mixed_dr100.png}
+\end{frame}}{}
+\begin{frame}{E — residual MAD ratio vs f64 (S0 / S3, 16 schemes)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/quant_residual_mad_S0_point1.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png}
+\end{column}
+\end{columns}
+\end{frame}
+\IfFileExists{../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png}{%
+\begin{frame}{E — S5 per-cycle curves (all-f16 vs f64)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png}
 \end{column}
 \end{columns}
 \end{frame}}{}
 
-\begin{frame}{v3 pilot — what the range stress shows}
-\sloppy
-\begin{itemize}
-\item \textbf{S7 ($10^6$ Jy point, $|V|_{max}=10^6>65504$)}: f64 reaches achDR
-  $2.6\times10^{13}$; rescaled all-f16 collapses to $10^7$ (resMAD
-  $\times2.6\times10^6$) — the global scale maps the peak to 65503, where the
-  f16 ulp is 32 (rel $5\times10^{-4}$), and that error re-grids into the
-  residual. all-bf16 is $8\times$ worse (ulp 256). Probes: model\_cast sits
-  exactly at $2^{16}$; f64 model has 99\% of components below the f16
-  subnormal floor $2^{-24}$.
-\item \textbf{Raw cast (allf16raw)}: overflow $\to$ inf $\to$ NaN at k=1 on all
-  three fields — the legacy archive's NaN mode, reproduced controlled; runs
-  are saved with NaN metrics + error note instead of crashing.
-\item \textbf{S5 (24 points, DR $10^6$)}: f64 finds 2060 components down to
-  $2^{-23}$ Jy; all-f16 keeps only 540 (faint comps rounded below the
-  $2^{-10}$-of-peak ulp), resMAD $\times5.2$, achDR $\times0.19$, stalls at k=4.
-  bf16: resMAD $\times27$. Model stage dominates — same ordering as the pilot.
-\item Probes make the mechanism visible per cycle: res\_peak descends
-  $1.2\times10^4\to1.2\times10^{-7}$ (f64, S7) vs stalls at $\sim15$ (all-f16).
-\item Next: remote batch adds noise ladder ($\sigma$ sweep on S2), multi-seed
-  error bars, and S6 gaussians DR $10^5$; then metric-vs-$\sigma$ / vs-DR /
-  vs-iteration graphs.
-\end{itemize}
-\end{frame}
+\section{Appendix F — v3 image panels (gallery has all runs)}
+
+\IfFileExists{../analysis/figures/panel_S7_point_peak1e6_n101_f64.png}{%
+\begin{frame}{F — S7 f64 panel}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S7_point_peak1e6_n101_f64.png}
+\end{frame}}{}
+\IfFileExists{../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png}{%
+\begin{frame}{F — S7 all-f16 panel}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png}
+\end{frame}}{}
+\IfFileExists{../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png}{%
+\begin{frame}{F — S5 all-f16 panel}
+\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png}
+\end{frame}}{}
 
 \end{document}
