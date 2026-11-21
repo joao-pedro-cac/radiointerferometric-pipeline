@@ -1,0 +1,11 @@
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+scheme & cc & flux & resMAD & resMAD/f64 & achDR/f64 & k & stop & s$_{vis}$ & s$_{model}$ \\
+\midrule
+allbf16 & 0.999995 & 0.99987 & 3.08e-06 & 26.89 & 0.037 & 4 & stall & 1 & 1 \\
+allf16 & 0.999995 & 0.99995 & 5.97e-07 & 5.21 & 0.192 & 4 & stall & 1 & 1 \\
+allf16raw & nan & nan & nan & nan & nan & 1 & zero\_residual & 1 & 1 \\
+f64 & 0.999997 & 1.00000 & 1.14e-07 & 1.00 & 1.000 & 10 & max\_major & 1 & 1 \\
+modelf16 & 0.999996 & 0.99987 & 6.58e-07 & 5.75 & 0.174 & 6 & stall & 1 & 1 \\
+\bottomrule
+\end{tabular}

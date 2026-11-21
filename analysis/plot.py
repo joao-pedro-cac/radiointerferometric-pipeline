@@ -134,6 +134,51 @@ def metric_vs_dr(df, metric, ylabel, name, logy=False, ax=None):
     return _save(fig, name)
 
 
+def log2_waterfall(edges, counts, labels, name, title="", vlines=None):
+    """log2-histogram waterfall: x = log2 bin, y = snapshot (iteration),
+    color = log10(count+1). vlines = [(x, label), ...] e.g. dtype limits."""
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    c = np.log10(np.asarray(counts, np.float64) + 1.0)
+    im = ax.imshow(c, aspect="auto", origin="lower", cmap="magma",
+                   extent=[edges[0], edges[-1], -0.5, len(labels) - 0.5])
+    ax.set_xlim(edges[0], edges[-1])     # keep out-of-range dtype lines from stretching
+    ax.set_yticks(range(len(labels)))
+    ax.set_yticklabels(labels, fontsize=7)
+    ax.set_xlabel("log2 |value|")
+    for x, lab in (vlines or []):
+        if not (edges[0] <= x <= edges[-1]):
+            continue
+        ax.axvline(x, color="cyan", lw=1.0, ls="--")
+        ax.text(x + 0.3, len(labels) - 0.6, lab, color="cyan", fontsize=7,
+                rotation=90, va="top")
+    ax.set_title(title, fontsize=10)
+    plt.colorbar(im, ax=ax, label="log10(count+1)")
+    fig.tight_layout()
+    return _save(fig, name)
+
+
+def probe_curves(snaps, name, title=""):
+    """Per-major-cycle probe scalars vs cycle: res_peak, res_mad,
+    n_components, s_model."""
+    ks = [s for s in snaps if s["label"].startswith("k")]
+    if not ks:
+        return None
+    k = np.array([s["scalars"]["k"] for s in ks])
+    fig, axes = plt.subplots(2, 2, figsize=(10, 6.5))
+    for ax, key, log in [(axes[0, 0], "res_peak", True), (axes[0, 1], "res_mad", True),
+                         (axes[1, 0], "n_components", False), (axes[1, 1], "s_model", True)]:
+        v = np.array([s["scalars"].get(key, np.nan) for s in ks])
+        ax.plot(k, v, "o-", ms=4)
+        if log:
+            ax.set_yscale("log")
+        ax.set_xlabel("major cycle k")
+        ax.set_ylabel(key)
+        ax.grid(alpha=0.3)
+    fig.suptitle(title, fontsize=11)
+    fig.tight_layout()
+    return _save(fig, name)
+
+
 def metric_bars(df, metric, ylabel, name, hue="quantization.model"):
     """Grouped bars: mean +/- std of `metric` per dataset (and hue if present)."""
     fig, ax = plt.subplots(figsize=(9, 5))

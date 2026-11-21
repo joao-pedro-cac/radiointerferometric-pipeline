@@ -145,6 +145,24 @@ def test_pipeline_probe_snaps_and_scales():
     assert set(out["scales"]) == {"vis", "wgt", "dirty", "psf", "model"}
 
 
+def test_pipeline_raw_cast_overflow_survives_and_is_probed():
+    # rescale_max=None + |vis| ~ 1e6 > 65504: raw f16 cast overflows to inf,
+    # the pipeline must still return (arrays may be non-finite) with probes.
+    geom = _geom(128)
+    uvw, freq = _ring_uv(64)
+    wgt = np.ones((64, 1))
+    vis = _tiny_vis(geom, uvw, freq, scale=1e6)
+    with np.errstate(over="ignore", invalid="ignore"):
+        out = pipeline.run_pipeline(vis, uvw, freq, wgt, geom, loop_max=2,
+                                    nthreads=1, probe=True, q_vis="float16",
+                                    rescale_max=None)
+    assert "probes" in out
+    assert [s["label"] for s in out["probes"].snaps][0] == "init"
+    assert not np.isfinite(out["dirty"]).all()          # overflow did happen
+    init = out["probes"].snaps[0]
+    assert init["stats"]["vis"]["frac_above_f16_max"] > 0.0
+
+
 def test_pipeline_probe_cast_arrays_appear_only_when_scaled():
     geom = _geom(128)
     uvw, freq = _ring_uv(64)

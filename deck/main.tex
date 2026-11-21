@@ -42,9 +42,13 @@
 \item CLEAN tuning (validated on the legacy archive): Högbom
   $\gamma=0.1$, $pf=10^{-4}$, 10 major cycles; residual re-imaged through the
   visibilities each major cycle.
-\item Metrics (all unit-tested, analytic ground truths, 30 tests green):
+\item Metrics (all unit-tested, analytic ground truths, 44 tests green):
   cross-correlation of restored images, flux conservation
   $\sum m/\sum t$, residual MAD (Jy/beam), achieved DR = peak/residual-MAD.
+\item Every run also records per-iteration \textbf{log2 range probes}
+  (probes.npz): histograms of $|x|$ per stage (vis / dirty / PSF / model /
+  residual) at init and after each major cycle, plus per-cycle
+  res\_peak / res\_mad / n\_components / quantization scales.
 \end{itemize}
 \end{frame}
 
@@ -214,6 +218,93 @@ CLEAN loop $\xrightarrow{\;q_{model}\;}$ model, PSF $\xrightarrow{\;q_{psf}\;}$
 \item Conclusion: per-stage f16 is safe for vis/dirty/PSF on point fields but the
   clean model needs $>$ f16 mantissa; bf16 anywhere in the model/vis path is costly.
 \item Extended sweep (S1, S2, 3 seeds) goes to the remote server per runbook.
+\end{itemize}
+\end{frame}
+
+\section{v3 sweep pilot — range stress + per-iteration probes}
+
+\begin{frame}{v3 pilot — why and what}
+\begin{itemize}
+\item Open questions from the pilot: what happens when the data range exceeds
+  the f16 range, and what is the actual range of each variable
+  (vis / dirty / PSF / model / residual) at each CLEAN iteration?
+\item New fields: S5 = 24 points, DR $10^6$ (model image spans 20 octaves vs the
+  f16 11-bit mantissa); S7 = 1 point at $10^6$ Jy ($|V|_{max}=10^6 > 65504$:
+  raw f16 cast overflows; rescaled cast pushes the $\sigma=10^{-4}$ noise into
+  f16 subnormals). S2 kept as reference. $\sigma=10^{-4}$ Jy, seed 101.
+\item Schemes: f64, all-f16 (rescaled), all-f16-raw ($--$rescale-max 0, the
+  controlled legacy-bug mode), all-bf16, model-f16.
+\item Every run now records \textbf{probes}: log2 histograms of $|x|$ (fixed
+  edges, 1 bin/octave) of every stage array at init and after each major cycle,
+  plus per-cycle res\_peak / res\_mad / n\_components / scales —
+  saved to probes.npz (unit-tested, 43 tests green).
+\end{itemize}
+\end{frame}
+
+\IfFileExists{tables/pilot_v3_S2_mixed_dr100.tex}{%
+\begin{frame}[shrink=8]{v3 pilot — S2 (mixed, DR 100): metrics by scheme}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S2_mixed_dr100.tex}}
+\end{frame}}{}
+
+\IfFileExists{tables/pilot_v3_S5_points_dr1e6.tex}{%
+\begin{frame}[shrink=8]{v3 pilot — S5 (24 points, DR $10^6$): metrics by scheme}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S5_points_dr1e6.tex}}
+\end{frame}}{}
+
+\IfFileExists{tables/pilot_v3_S7_point_peak1e6.tex}{%
+\begin{frame}[shrink=8]{v3 pilot — S7 (1 point, $10^6$ Jy): metrics by scheme}
+\resizebox{\textwidth}{!}{\input{tables/pilot_v3_S7_point_peak1e6.tex}}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/probe_cmp_S2_mixed_dr100.png}{%
+\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S2}
+\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S2_mixed_dr100.png}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/probe_cmp_S5_points_dr1e6.png}{%
+\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S5 (DR $10^6$)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S5_points_dr1e6.png}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/probe_cmp_S7_point_peak1e6.png}{%
+\begin{frame}{v3 probes — log2 range per major cycle, all schemes on S7 ($10^6$ Jy)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/probe_cmp_S7_point_peak1e6.png}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/probe_S7_point_peak1e6_n101_allf16raw_curves.png}{%
+\begin{frame}{v3 probes — per-cycle curves on S7: rescaled f16 vs raw f16}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16_curves.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/probe_S7_point_peak1e6_n101_allf16raw_curves.png}
+\end{column}
+\end{columns}
+\end{frame}}{}
+
+\begin{frame}{v3 pilot — what the range stress shows}
+\sloppy
+\begin{itemize}
+\item \textbf{S7 ($10^6$ Jy point, $|V|_{max}=10^6>65504$)}: f64 reaches achDR
+  $2.6\times10^{13}$; rescaled all-f16 collapses to $10^7$ (resMAD
+  $\times2.6\times10^6$) — the global scale maps the peak to 65503, where the
+  f16 ulp is 32 (rel $5\times10^{-4}$), and that error re-grids into the
+  residual. all-bf16 is $8\times$ worse (ulp 256). Probes: model\_cast sits
+  exactly at $2^{16}$; f64 model has 99\% of components below the f16
+  subnormal floor $2^{-24}$.
+\item \textbf{Raw cast (allf16raw)}: overflow $\to$ inf $\to$ NaN at k=1 on all
+  three fields — the legacy archive's NaN mode, reproduced controlled; runs
+  are saved with NaN metrics + error note instead of crashing.
+\item \textbf{S5 (24 points, DR $10^6$)}: f64 finds 2060 components down to
+  $2^{-23}$ Jy; all-f16 keeps only 540 (faint comps rounded below the
+  $2^{-10}$-of-peak ulp), resMAD $\times5.2$, achDR $\times0.19$, stalls at k=4.
+  bf16: resMAD $\times27$. Model stage dominates — same ordering as the pilot.
+\item Probes make the mechanism visible per cycle: res\_peak descends
+  $1.2\times10^4\to1.2\times10^{-7}$ (f64, S7) vs stalls at $\sim15$ (all-f16).
+\item Next: remote batch adds noise ladder ($\sigma$ sweep on S2), multi-seed
+  error bars, and S6 gaussians DR $10^5$; then metric-vs-$\sigma$ / vs-DR /
+  vs-iteration graphs.
 \end{itemize}
 \end{frame}
 

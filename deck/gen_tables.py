@@ -73,6 +73,42 @@ def main():
             if len(lp):
                 (outdir / f"quant_lowprec_{sky.split('_')[0].lower()}.tex").write_text(
                     tex_table(lp[cols2].reset_index(drop=True), cols2, hdr2))
+    # v3 sweep pilot tables: one per sky, rows = schemes (incl. raw-cast),
+    # ratios vs the f64 row of the same study, plus loop/probe facts
+    results_root = Path(args.results_root)
+    sweep_runs = [r for r in load_results(results_root)
+                  if Path(r["run_dir"]).parent.name.startswith("sweep_v3")]
+    if sweep_runs:
+        sdf = to_dataframe(sweep_runs).copy()
+        sdf["sky"] = sdf["dataset_name"].str.replace(r"_n[0-9]+$", "", regex=True)
+        # scheme = run-dir suffix after "<dataset_name>_"
+        sdf["scheme"] = [Path(r["run_dir"]).name[len(r["dataset_name"]) + 1:]
+                         for _, r in sdf.iterrows()]
+        sdf = sdf.drop_duplicates(["sky", "scheme"], keep="last")  # prefer newest study
+        sdf["s_vis"] = sdf["scales"].map(lambda s: f"{s['vis']:.3g}" if isinstance(s, dict) else "-")
+        sdf["s_model"] = sdf["scales"].map(lambda s: f"{s['model']:.3g}" if isinstance(s, dict) else "-")
+        for sky in sorted(sdf["sky"].unique()):
+            sub = sdf[sdf.sky == sky].copy()
+            ref = sub[sub["scheme"] == "f64"]
+            if ref.empty:
+                continue
+            ref = ref.iloc[0]
+            sub["rMAD"] = sub.apply(
+                lambda r: f"{r['residual_mad'] / ref['residual_mad']:.2f}", axis=1)
+            sub["rDR"] = sub.apply(
+                lambda r: (f"{r['achieved_dr'] / ref['achieved_dr']:.2e}"
+                           if ref['achieved_dr'] and r['achieved_dr'] / ref['achieved_dr'] < 0.01
+                           else f"{r['achieved_dr'] / ref['achieved_dr']:.3f}"), axis=1)
+            sub["cc"] = sub["cross_correlation"].map(lambda v: f"{v:.6f}")
+            sub["flux"] = sub["flux_conservation"].map(lambda v: f"{v:.5f}")
+            sub["resMAD"] = sub["residual_mad"].map(lambda v: f"{v:.2e}")
+            sub["k"] = sub["n_major_cycles"].astype(int)
+            sub["conv"] = sub["converged_reason"]
+            cols3 = ["scheme", "cc", "flux", "resMAD", "rMAD", "rDR", "k", "conv", "s_vis", "s_model"]
+            hdr3 = ["scheme", "cc", "flux", "resMAD", "resMAD/f64", "achDR/f64", "k",
+                    "stop", "s$_{vis}$", "s$_{model}$"]
+            (outdir / f"pilot_v3_{sky}.tex").write_text(
+                tex_table(sub.sort_values("scheme")[cols3].reset_index(drop=True), cols3, hdr3))
     print(f"tables -> {outdir} ({len(df)} runs)")
 
 

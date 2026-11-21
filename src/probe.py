@@ -24,9 +24,10 @@ the values actually stored in the low-precision dtype, i.e. eff * s.
 """
 import numpy as np
 
-LOG2_LO = -60.0
-LOG2_HI = 30.0
-NBINS = 90          # 1 bin per octave over 90 decades
+LOG2_LO = -64.0
+LOG2_HI = 80.0
+NBINS = 144         # 1 bin per octave over 144 decades (raw dirty/PSF reach 2^48,
+                    # 2^68 at 1e6 Jy peak; Jy/beam frames live near 2^0..2^-30)
 
 F16_MAX = 65504.0
 F16_MIN_SUB = 2.0 ** -24

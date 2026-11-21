@@ -43,18 +43,20 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
     t = {}
     pc = probe_mod.ProbeCollector() if probe else None
 
-    def _snap(label, arrays, scales, scalars=None):
-        # scales keys must match arrays keys. "_cast" arrays (values as stored
-        # in the low-precision dtype) only exist when the scale != 1; otherwise
-        # the effective array already equals the cast array.
+    def _casts(d):
+        # {name_cast: raw * scale} for stages whose scale != 1 (otherwise the
+        # effective array already equals the cast array)
+        return {name + "_cast": arr * s for name, (arr, s) in d.items() if s != 1.0}
+
+    def _snap(label, arrays, casts=None, scalars=None):
+        # arrays: physical units (vis/model in Jy, images in Jy/beam, wgt raw).
+        # casts: {name_cast: raw_array * scale} — values as stored in the
+        # low-precision dtype.
         if pc is None:
             return
         arrays = dict(arrays)
-        for name, s in scales.items():
-            if s != 1.0 and name in arrays:
-                arrays[name + "_cast"] = arrays[name] * s
-        pc.snap(label, arrays=arrays,
-                scalars=dict(scalars or {}, **{f"s_{k}": v for k, v in scales.items()}))
+        arrays.update(casts or {})
+        pc.snap(label, arrays=arrays, scalars=scalars or {})
 
     t0 = time.time()
     vis_eff, s_vis = _q_vis(vis, q_vis, rescale_max)
@@ -68,9 +70,13 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
     psf_peak = float(np.max(psf))                    # f64 reference normalization
     psf_eff, s_psf = _q_img(psf, q_psf, rescale_max)
     t["imaging"] = time.time() - t0
-    _snap("init", dict(vis=vis_eff, wgt=wgt_eff, dirty=dirty_eff, psf=psf_eff),
-          dict(vis=s_vis, wgt=s_w, dirty=s_dirty, psf=s_psf),
-          scalars=dict(psf_peak=psf_peak))
+    _snap("init",
+          dict(vis=vis_eff, wgt=wgt_eff, dirty=dirty_eff / psf_peak,
+               psf=psf_eff / psf_peak),
+          casts=_casts(dict(vis=(vis_eff, s_vis), wgt=(wgt_eff, s_w),
+                            dirty=(dirty_eff, s_dirty), psf=(psf_eff, s_psf))),
+          scalars=dict(psf_peak=psf_peak, s_vis=s_vis, s_wgt=s_w,
+                       s_dirty=s_dirty, s_psf=s_psf))
 
     t0 = time.time()
     model, info = clean.hogbom(dirty_eff, psf_eff, gamma, pf, maxiter)
@@ -90,10 +96,14 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
         res_peak = float(np.max(np.abs(residual_eff))) / psf_peak
         res_mad = 1.4826 * np.median(np.abs(residual_eff / psf_peak
                                              - np.median(residual_eff / psf_peak)))
-        _snap(f"k{k}", dict(vis_resid=resid_vis, residual=residual_eff, model=model),
-              dict(vis_resid=s_vis, residual=s_dirty, model=s_model),
+        _snap(f"k{k}",
+              dict(vis_resid=resid_vis, residual=residual_eff / psf_peak, model=model),
+              casts=_casts(dict(vis_resid=(resid_vis, s_vis),
+                                residual=(residual_eff, s_dirty),
+                                model=(model, s_model))),
               scalars=dict(k=k, res_peak=res_peak, res_mad=res_mad,
-                           n_components=int(np.count_nonzero(model))))
+                           n_components=int(np.count_nonzero(model)),
+                           s_vis_resid=s_vis, s_residual=s_dirty, s_model=s_model))
         if not np.isfinite(res_peak) or res_peak == 0.0:
             converged = "zero_residual"
             break
@@ -107,10 +117,12 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
         comp, _ = clean.hogbom(residual_eff, psf_eff, gamma, pf, maxiter)
         model, s_model = _q_img(model + comp, q_model, rescale_max)
     t["clean"] = time.time() - t0
-    _snap("final", dict(model=model, residual=residual_eff,
-                        dirty=dirty_eff, psf=psf_eff),
-          dict(model=s_model, residual=s_dirty, dirty=s_dirty, psf=s_psf),
-          scalars=dict(n_major_cycles=k))
+    _snap("final",
+          dict(model=model, residual=residual_eff / psf_peak,
+               dirty=dirty_eff / psf_peak, psf=psf_eff / psf_peak),
+          casts=_casts(dict(model=(model, s_model), residual=(residual_eff, s_dirty),
+                            dirty=(dirty_eff, s_dirty), psf=(psf_eff, s_psf))),
+          scalars=dict(n_major_cycles=k, psf_peak=psf_peak))
 
     residual_beam = residual_eff / psf_peak
     out = dict(dirty=dirty_eff, psf=psf_eff, psf_peak=psf_peak,

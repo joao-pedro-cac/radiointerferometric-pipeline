@@ -67,7 +67,20 @@ def main():
         probe=args.probe)
     wall = time.time() - t0
 
-    m = pipeline.compute_metrics(out["model"], out["residual"], out["psf"], truth)
+    # A raw-cast (rescale_max=0) f16 run can overflow to inf/NaN; the pipeline
+    # itself survives that, but the beam/metrics path may not. Save the run
+    # anyway with NaN metrics + an error note instead of losing it (the legacy
+    # archive lost exactly these runs).
+    err = None
+    try:
+        m = pipeline.compute_metrics(out["model"], out["residual"], out["psf"], truth)
+    except Exception as e:  # noqa: BLE001 - any failure here must not lose the run
+        err = f"{type(e).__name__}: {e}"
+        m = dict(cross_correlation=float("nan"), flux_conservation=float("nan"),
+                 residual_rms=float("nan"), residual_mad=float("nan"),
+                 achieved_dr=float("nan"), snr_db=float("nan"),
+                 beam_bmaj_px=float("nan"), beam_bmin_px=float("nan"),
+                 beam_area_px=float("nan"), restored_peak=float("nan"))
 
     params = dict(dataset=str(d), dataset_name=d.name, gamma=args.gamma, pf=args.pf,
                   maxiter=args.maxiter, loop_max=args.loop_max, eps=args.eps,
@@ -84,11 +97,16 @@ def main():
                    psf_peak=out["psf_peak"],
                    scales={k: float(v) for k, v in out["scales"].items()},
                    wall_time_s=wall, **{f"time_{k}": v for k, v in out["timing"].items()})
+    if err is not None:
+        metrics["error"] = err
 
     # restored image for display (display frame)
-    bmaj, bmin, pa = operators.synth_beam_from_psf(out["psf"])
-    kern = operators.make_beam_kernel(bmaj, bmin, pa)
-    restored = operators.restore(operators.to_display(out["model"]), kern)
+    try:
+        bmaj, bmin, pa = operators.synth_beam_from_psf(out["psf"])
+        kern = operators.make_beam_kernel(bmaj, bmin, pa)
+        restored = operators.restore(operators.to_display(out["model"]), kern)
+    except Exception:  # noqa: BLE001
+        restored = np.full(out["model"].shape, np.nan, dtype=np.float32)
 
     outdir = Path(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
