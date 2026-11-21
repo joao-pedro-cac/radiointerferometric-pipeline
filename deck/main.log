@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.24)  21 NOV 2026 10:14
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.24)  21 NOV 2026 15:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1235,244 +1235,336 @@ LaTeX Info: Symbol \textrightarrow not provided by
 {/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\translate ' on input line 211.
+(hyperref)                removing `math shift' on input line 211.
 
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 211.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 211.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 211.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\times' on input line 211.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 211.
+
+LaTeX Font Info:    Font shape `T1/phv/m/it' in size <14.4> not available
+(Font)              Font shape `T1/phv/m/sl' tried instead on input line 211.
+LaTeX Font Info:    Font shape `T1/phv/m/sl' will be
+(Font)              scaled to size 13.24796pt on input line 211.
 [18
 
-] [19
+]
+! Missing $ inserted.
+<inserted text> 
+                $
+l.226 \end{frame}
+                 
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+! Extra }, or forgotten $.
+<recently read> \egroup 
+                        
+l.226 \end{frame}
+                 
+I've deleted a group-closing symbol because it seems to be
+spurious, as in `$x}$'. But perhaps the } is legitimate and
+you forgot something else, as in `\hbox{$x}'. In such cases
+the way to recover is to insert both the forgotten and the
+deleted material, e.g., by typing `I$}'.
+
+
+! LaTeX Error: Command \item invalid in math mode.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.226 \end{frame}
+                 
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Missing $ inserted.
+<inserted text> 
+                $
+l.226 \end{frame}
+                 
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+Overfull \hbox (2.04381pt too wide) in paragraph at lines 226--226
+\T1/cmtt/m/n/10 scripts/run$[]\T1/phv/m/sl/10 xperiments\OML/cmm/m/it/10 :\T1/p
+hv/m/sl/10 shundernamedscreensessions\OT1/cmss/m/n/10 ; \T1/phv/m/sl/10 everyru
+ncarriesprobes\OT1/cmss/m/n/10 (\T1/phv/m/sl/10 log\T1/phv/m/n/10 2\T1/phv/m/sl
+/10 hists \OT1/cmss/m/n/10 + 
+ []
+
+! Missing } inserted.
+<inserted text> 
+                }
+l.226 \end{frame}
+                 
+I've inserted something that you may have forgotten.
+(See the <inserted text> above.)
+With luck, this will get me unwedged. But if you
+really didn't forget anything, try typing `2' now; then
+my insertion and my current dilemma will both disappear.
+
+[19
 
 ]
-<../analysis/figures/panel_S0_point1_n101.png, id=202, 1076.3412pt x 667.293pt>
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `\translate ' on input line 269.
+
+[20
+
+] [21
+
+]
+<../analysis/figures/panel_S0_point1_n101.png, id=215, 1076.3412pt x 667.293pt>
 
 File: ../analysis/figures/panel_S0_point1_n101.png Graphic file (type png)
 <use ../analysis/figures/panel_S0_point1_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S0_point1_n101.png  used on 
-input line 219.
+input line 277.
 (pdftex.def)             Requested size: 310.50502pt x 192.49934pt.
- [20
+ [22
 
  <../analysis/figures/panel_S0_point1_n101.png>]
-<../analysis/figures/panel_S1_points_dr10_n101.png, id=209, 1076.3412pt x 667.7
+<../analysis/figures/panel_S1_points_dr10_n101.png, id=222, 1076.3412pt x 667.7
 748pt>
 File: ../analysis/figures/panel_S1_points_dr10_n101.png Graphic file (type png)
 
 <use ../analysis/figures/panel_S1_points_dr10_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S1_points_dr10_n101.png  use
-d on input line 222.
+d on input line 280.
 (pdftex.def)             Requested size: 310.27509pt x 192.49934pt.
- [21
+ [23
 
  <../analysis/figures/panel_S1_points_dr10_n101.png>]
-<../analysis/figures/panel_S2_mixed_dr100_n101.png, id=216, 1076.3412pt x 669.7
+<../analysis/figures/panel_S2_mixed_dr100_n101.png, id=229, 1076.3412pt x 669.7
 02pt>
 File: ../analysis/figures/panel_S2_mixed_dr100_n101.png Graphic file (type png)
 
 <use ../analysis/figures/panel_S2_mixed_dr100_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S2_mixed_dr100_n101.png  use
-d on input line 225.
+d on input line 283.
 (pdftex.def)             Requested size: 309.38821pt x 192.49934pt.
- [22
+ [24
 
  <../analysis/figures/panel_S2_mixed_dr100_n101.png>]
-<../analysis/figures/panel_S3_gauss_dr1000_n101.png, id=223, 1076.3412pt x 661.
+<../analysis/figures/panel_S3_gauss_dr1000_n101.png, id=236, 1076.3412pt x 661.
 9932pt>
 File: ../analysis/figures/panel_S3_gauss_dr1000_n101.png Graphic file (type png
 )
 <use ../analysis/figures/panel_S3_gauss_dr1000_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S3_gauss_dr1000_n101.png  us
-ed on input line 228.
+ed on input line 286.
 (pdftex.def)             Requested size: 312.98499pt x 192.49934pt.
- [23
+ [25
 
  <../analysis/figures/panel_S3_gauss_dr1000_n101.png>]
-[24
+[26
 
-] (./tables/summary_all.tex) [25
+] (./tables/summary_all.tex) [27
 
-] (./tables/quant_s0.tex) [26
-
-]
-(./tables/quant_s3.tex) [27
-
-] (./tables/quant_s1.tex) [28
+] (./tables/quant_s0.tex) [28
 
 ]
-(./tables/quant_s2.tex) [29
+(./tables/quant_s3.tex) [29
 
-] (./tables/pilot_v3_S2_mixed_dr100.tex) [30
-
-]
-(./tables/pilot_v3_S5_points_dr1e6.tex) [31
+] (./tables/quant_s1.tex) [30
 
 ]
-(./tables/pilot_v3_S7_point_peak1e6.tex) [32
+(./tables/quant_s2.tex) [31
 
-] [33
+] (./tables/pilot_v3_S2_mixed_dr100.tex) [32
 
 ]
-<../analysis/figures/stage_d.png, id=285, 931.3194pt x 322.806pt>
+(./tables/pilot_v3_S5_points_dr1e6.tex) [33
+
+]
+(./tables/pilot_v3_S7_point_peak1e6.tex) [34
+
+] [35
+
+]
+<../analysis/figures/stage_d.png, id=298, 931.3194pt x 322.806pt>
 File: ../analysis/figures/stage_d.png Graphic file (type png)
 <use ../analysis/figures/stage_d.png>
-Package pdftex.def Info: ../analysis/figures/stage_d.png  used on input line 27
-6.
+Package pdftex.def Info: ../analysis/figures/stage_d.png  used on input line 33
+4.
 (pdftex.def)             Requested size: 195.1881pt x 67.65334pt.
-<../analysis/figures/stage_p.png, id=286, 931.3194pt x 322.806pt>
+<../analysis/figures/stage_p.png, id=299, 931.3194pt x 322.806pt>
 File: ../analysis/figures/stage_p.png Graphic file (type png)
 <use ../analysis/figures/stage_p.png>
-Package pdftex.def Info: ../analysis/figures/stage_p.png  used on input line 27
-6.
+Package pdftex.def Info: ../analysis/figures/stage_p.png  used on input line 33
+4.
 (pdftex.def)             Requested size: 195.1881pt x 67.65334pt.
- [34
+ [36
 
  <../analysis/figures/stage_d.png> <../analysis/figures/stage_p.png>]
-<../analysis/figures/ladder_flux.png, id=294, 462.0462pt x 325.6968pt>
+<../analysis/figures/ladder_flux.png, id=307, 462.0462pt x 325.6968pt>
 File: ../analysis/figures/ladder_flux.png Graphic file (type png)
 <use ../analysis/figures/ladder_flux.png>
 Package pdftex.def Info: ../analysis/figures/ladder_flux.png  used on input lin
-e 287.
+e 345.
 (pdftex.def)             Requested size: 195.1881pt x 137.59184pt.
-<../analysis/figures/ladder_resmad.png, id=295, 450.9648pt x 325.215pt>
+<../analysis/figures/ladder_resmad.png, id=308, 450.9648pt x 325.215pt>
 File: ../analysis/figures/ladder_resmad.png Graphic file (type png)
 <use ../analysis/figures/ladder_resmad.png>
 Package pdftex.def Info: ../analysis/figures/ladder_resmad.png  used on input l
-ine 287.
+ine 345.
 (pdftex.def)             Requested size: 195.1881pt x 140.76273pt.
- [35
+ [37
 
  <../analysis/figures/ladder_flux.png> <../analysis/figures/ladder_resmad.png>]
- [36
+ [38
 
 ]
-<../analysis/figures/detail_S3_gauss_dr1000_all-f16.png, id=310, 642.7212pt x 8
+<../analysis/figures/detail_S3_gauss_dr1000_all-f16.png, id=325, 642.7212pt x 8
 52.3042pt>
 File: ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png Graphic file (type
  png)
 <use ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png>
 Package pdftex.def Info: ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png
-  used on input line 294.
+  used on input line 352.
 (pdftex.def)             Requested size: 145.15523pt x 192.49934pt.
- [37
+ [39
 
  <../analysis/figures/detail_S3_gauss_dr1000_all-f16.png>]
-<../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png, id=318, 642.2394pt x 
+<../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png, id=332, 642.2394pt x 
 851.3406pt>
 File: ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png Graphic file (typ
 e png)
 <use ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png>
 Package pdftex.def Info: ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.pn
-g  used on input line 298.
+g  used on input line 356.
 (pdftex.def)             Requested size: 145.21301pt x 192.49934pt.
- [38
+ [40
 
  <../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png>]
-<../analysis/figures/detail_S5_points_dr1e6_schemes.png, id=325, 1227.6264pt x 
+<../analysis/figures/detail_S5_points_dr1e6_schemes.png, id=339, 1227.6264pt x 
 878.3214pt>
 File: ../analysis/figures/detail_S5_points_dr1e6_schemes.png Graphic file (type
  png)
 <use ../analysis/figures/detail_S5_points_dr1e6_schemes.png>
 Package pdftex.def Info: ../analysis/figures/detail_S5_points_dr1e6_schemes.png
-  used on input line 302.
+  used on input line 360.
 (pdftex.def)             Requested size: 262.49216pt x 187.80327pt.
- [39
+ [41
 
  <../analysis/figures/detail_S5_points_dr1e6_schemes.png>]
-<../analysis/figures/detail_S2_mixed_dr100_schemes.png, id=333, 1227.6264pt x 8
+<../analysis/figures/detail_S2_mixed_dr100_schemes.png, id=346, 1227.6264pt x 8
 78.3214pt>
 File: ../analysis/figures/detail_S2_mixed_dr100_schemes.png Graphic file (type 
 png)
 <use ../analysis/figures/detail_S2_mixed_dr100_schemes.png>
 Package pdftex.def Info: ../analysis/figures/detail_S2_mixed_dr100_schemes.png 
- used on input line 306.
+ used on input line 364.
 (pdftex.def)             Requested size: 262.49216pt x 187.80327pt.
- [40
+ [42
 
- <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [41
+ <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [43
 
 ]
-<../analysis/figures/probe_cmp_S2_mixed_dr100.png, id=347, 1119.7032pt x 924.57
+<../analysis/figures/probe_cmp_S2_mixed_dr100.png, id=361, 1119.7032pt x 924.57
 42pt>
 File: ../analysis/figures/probe_cmp_S2_mixed_dr100.png Graphic file (type png)
 <use ../analysis/figures/probe_cmp_S2_mixed_dr100.png>
 Package pdftex.def Info: ../analysis/figures/probe_cmp_S2_mixed_dr100.png  used
- on input line 313.
+ on input line 371.
 (pdftex.def)             Requested size: 227.43915pt x 187.80327pt.
- [42
+ [44
 
  <../analysis/figures/probe_cmp_S2_mixed_dr100.png>]
-<../analysis/figures/quant_residual_mad_S0_point1.png, id=354, 714.5094pt x 317
+<../analysis/figures/quant_residual_mad_S0_point1.png, id=368, 714.5094pt x 317
 .0244pt>
 File: ../analysis/figures/quant_residual_mad_S0_point1.png Graphic file (type p
 ng)
 <use ../analysis/figures/quant_residual_mad_S0_point1.png>
 Package pdftex.def Info: ../analysis/figures/quant_residual_mad_S0_point1.png  
-used on input line 323.
+used on input line 381.
 (pdftex.def)             Requested size: 195.1881pt x 86.6039pt.
-<../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png, id=355, 714.5094pt
+<../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png, id=369, 714.5094pt
  x 317.0244pt>
 File: ../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png Graphic file (
 type png)
 <use ../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png>
 Package pdftex.def Info: ../analysis/figures/quant_residual_mad_S3_gauss_dr1000
-.png  used on input line 323.
+.png  used on input line 381.
 (pdftex.def)             Requested size: 195.1881pt x 86.6039pt.
- [43
+ [45
 
  <../analysis/figures/quant_residual_mad_S0_point1.png> <../analysis/figures/qu
 ant_residual_mad_S3_gauss_dr1000.png>]
-<../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png, id=364, 714.991
+<../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png, id=377, 714.991
 2pt x 463.0098pt>
 File: ../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png Graphic fil
 e (type png)
 <use ../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png>
 Package pdftex.def Info: ../analysis/figures/probe_S5_points_dr1e6_n101_f64_cur
-ves.png  used on input line 334.
+ves.png  used on input line 392.
 (pdftex.def)             Requested size: 195.1881pt x 126.39903pt.
-<../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png, id=365, 714.
+<../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png, id=378, 714.
 5094pt x 463.0098pt>
 File: ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png Graphic 
 file (type png)
 <use ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png>
 Package pdftex.def Info: ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_
-curves.png  used on input line 334.
+curves.png  used on input line 392.
 (pdftex.def)             Requested size: 195.1881pt x 126.48381pt.
- [44
+ [46
 
  <../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png> <../analysis/f
-igures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [45
+igures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [47
 
 ]
-<../analysis/figures/panel_S7_point_peak1e6_n101_f64.png, id=380, 1076.3412pt x
+<../analysis/figures/panel_S7_point_peak1e6_n101_f64.png, id=394, 1076.3412pt x
  665.8476pt>
 File: ../analysis/figures/panel_S7_point_peak1e6_n101_f64.png Graphic file (typ
 e png)
 <use ../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>
 Package pdftex.def Info: ../analysis/figures/panel_S7_point_peak1e6_n101_f64.pn
-g  used on input line 341.
+g  used on input line 399.
 (pdftex.def)             Requested size: 311.16196pt x 192.49934pt.
 
-[46
+[48
 
  <../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>]
-<../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png, id=387, 1076.3412p
+<../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png, id=401, 1076.3412p
 t x 666.3294pt>
 File: ../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png Graphic file (
 type png)
 <use ../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png>
 Package pdftex.def Info: ../analysis/figures/panel_S7_point_peak1e6_n101_allf16
-.png  used on input line 345.
+.png  used on input line 403.
 (pdftex.def)             Requested size: 310.94846pt x 192.49934pt.
- [47
+ [49
 
  <../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png>]
-<../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png, id=394, 1076.3412pt
+<../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png, id=409, 1076.3412pt
  x 669.702pt>
 File: ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png Graphic file (t
 ype png)
 <use ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png>
 Package pdftex.def Info: ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.
-png  used on input line 349.
+png  used on input line 407.
 (pdftex.def)             Requested size: 309.38821pt x 192.49934pt.
- [48
+ [50
 
  <../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png>]
 \tf@nav=\write6
@@ -1489,35 +1581,46 @@ png  used on input line 349.
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 6D755C786B17ECE0DEB609D7F2CA67FB;2578.
+
+
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: 6D755C786B17ECE0DEB609D7F2CA67FB;2578
+(rerunfilecheck)             After:  46BDB5AE960BE15571DF5A1313941BEB;2874.
  ) 
 Here is how much of TeX's memory you used:
- 25978 strings out of 467525
- 525532 string characters out of 5418982
- 890810 words of memory out of 5000000
- 54216 multiletter control sequences out of 15000+600000
- 691237 words of font info for 115 fonts, out of 8000000 for 9000
+ 26000 strings out of 467525
+ 526295 string characters out of 5418982
+ 891810 words of memory out of 5000000
+ 54232 multiletter control sequences out of 15000+600000
+ 694590 words of font info for 122 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,13n,123p,1915b,760s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb
-></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb><
-/usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></
-usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></us
-r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
-/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local
-/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local
-/texlive/2026/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texliv
-e/2026/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/
-texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on main.pdf (48 pages, 14206621 bytes).
+
+pdfTeX warning (dest): name{Outline1.4} has been referenced but does not exist,
+ replaced by a fixed one
+
+</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><
+/usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></u
+sr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></us
+r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/
+local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/l
+ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/loc
+al/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
+/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/t
+exlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/loc
+al/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local
+/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/t
+exlive/2026/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/
+2026/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/te
+xmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
+Output written on main.pdf (50 pages, 14212681 bytes).
 PDF statistics:
- 490 PDF objects out of 1000 (max. 8388607)
- 340 compressed objects within 4 object streams
- 108 named destinations out of 1000 (max. 500000)
+ 507 PDF objects out of 1000 (max. 8388607)
+ 355 compressed objects within 4 object streams
+ 114 named destinations out of 1000 (max. 500000)
  286 words of extra memory for PDF output out of 10000 (max. 10000000)
 

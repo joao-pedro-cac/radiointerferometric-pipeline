@@ -37,3 +37,29 @@ bash deck/build.sh
 
 Datasets are reproducible from seed (`experiments/make_dataset.py`), so the
 server only needs `data/uvcov/` + the code — or regenerate everything there.
+
+## Batch 2 (noise × DR × seeds sweeps)
+
+Individual experiment scripts with semantic results dirs, plus a dispatcher
+that runs each under a named screen session:
+
+```bash
+cd $STAGE_ROOT/code
+bash scripts/run_experiments.sh --dry                 # preview
+bash scripts/run_experiments.sh                        # all three, in screen
+bash scripts/run_experiments.sh exp_dr                 # just one
+screen -ls                                             # sessions b2_exp_*
+tail -f results/batch2/logs/exp_dr.log
+```
+
+- `scripts/exp_dr.sh` — S6 + S8(1000 src) DR ladder 1e2..1e6, σ=1e-4, noise seeds 101 102
+  → `results/batch2/exp_dr_<ts>/`
+- `scripts/exp_noise.sh` — S8 DR 1e4 at σ=1e-2/1e-3/1e-6, noise seeds 101 102
+  → `results/batch2/exp_noise_<ts>/`
+- `scripts/exp_seeds.sh` — S8 DR 1e4 sky seeds s42/s43/s44, noise seed 103
+  → `results/batch2/exp_seeds_<ts>/`
+- shared scheme list: `scripts/batch2_common.sh`; datasets: `make_ladder_v3.sh`.
+- after pulling results back:
+  `python analysis/make_sweep.py code/results/batch2 --out analysis/figures/batch2`
+  plus `make_probe_figures.py` / `make_figures.py` / `deck/build.sh` as usual.
+

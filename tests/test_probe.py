@@ -101,6 +101,35 @@ def test_collector_hist_counts_sum_to_nonzero():
     assert int(s["hists"]["a"].sum()) == nz
 
 
+def test_downsample_block_mean():
+    a = np.arange(16, dtype=np.float64).reshape(4, 4)
+    d = probe.downsample(a, 2)
+    assert d.shape == (2, 2)
+    assert d[0, 0] == np.mean(a[:2, :2])
+    # non-divisible edges are trimmed
+    d3 = probe.downsample(np.ones((7, 5)), 2)
+    assert d3.shape == (3, 2)
+    assert probe.downsample(a, 1) is a
+
+
+def test_collector_custom_bins_and_images_roundtrip():
+    pc = probe.ProbeCollector(lo=-8, hi=8, nbins=32, snap_factor=4)
+    img = np.arange(64, dtype=np.float64).reshape(8, 8)
+    pc.snap("init", arrays={"model": img, "vis": np.array([1 + 1j])},
+            scalars={"k": 0}, image_vars=("model",))
+    assert pc.edges.size == 33
+    assert "model" in pc.snaps[0]["images"]
+    assert pc.snaps[0]["images"]["model"].shape == (2, 2)
+    assert "vis" not in pc.snaps[0]["images"]      # only image_vars are snapped
+    d = pc.to_arrays()
+    assert int(d["probe_snap_factor"]) == 4
+    pc2 = probe.ProbeCollector.from_arrays(d)
+    assert pc2.nbins == 32 and pc2.snap_factor == 4
+    assert np.array_equal(pc2.snaps[0]["images"]["model"],
+                          pc.snaps[0]["images"]["model"])
+    assert np.array_equal(pc2.snaps[0]["hists"]["vis"], pc.snaps[0]["hists"]["vis"])
+
+
 # ---------- pipeline integration ----------
 
 def _geom(n=128, cell_deg=1.0 / 128):
@@ -161,6 +190,25 @@ def test_pipeline_raw_cast_overflow_survives_and_is_probed():
     assert not np.isfinite(out["dirty"]).all()          # overflow did happen
     init = out["probes"].snaps[0]
     assert init["stats"]["vis"]["frac_above_f16_max"] > 0.0
+
+
+def test_pipeline_probe_bins_and_snaps():
+    geom = _geom(128)
+    uvw, freq = _ring_uv(64)
+    wgt = np.ones((64, 1))
+    vis = _tiny_vis(geom, uvw, freq)
+    out = pipeline.run_pipeline(vis, uvw, freq, wgt, geom, loop_max=2,
+                                nthreads=1, probe=True, probe_bins=288,
+                                probe_snap=8)
+    pc = out["probes"]
+    assert pc.edges.size == 289                      # custom bin count honoured
+    fin = pc.snaps[-1]
+    assert "model" in fin["images"] and "residual" in fin["images"]
+    assert fin["images"]["model"].shape == (16, 16)  # 128 / 8
+    assert fin["images"]["residual"].dtype == np.float32
+    d = pc.to_arrays()
+    pc2 = probe.ProbeCollector.from_arrays(d)
+    assert np.array_equal(pc2.snaps[-1]["images"]["model"], fin["images"]["model"])
 
 
 def test_pipeline_probe_cast_arrays_appear_only_when_scaled():

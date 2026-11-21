@@ -185,6 +185,32 @@ def probe_curves(snaps, name, title=""):
     return _save(fig, name)
 
 
+def metric_vs_axis(df, x, y, hue, name, xlabel="", ylabel="", logx=True,
+                   logy=False, title="", ref_line=None):
+    """Mean +/- std (over seeds) of `y` vs axis `x`, one line per `hue` value.
+    df must already contain columns x, y, hue."""
+    fig, ax = plt.subplots(figsize=(7.5, 5))
+    for h, g in df.groupby(hue):
+        agg = g.groupby(x)[y].agg(["mean", "std"]).reset_index()
+        agg = agg.sort_values(x)
+        ax.errorbar(agg[x], agg["mean"], yerr=agg["std"].fillna(0.0),
+                    marker="o", ms=4, capsize=3, label=str(h))
+    if logx:
+        ax.set_xscale("log")
+    if logy:
+        ax.set_yscale("log")
+    if ref_line is not None:
+        ax.axhline(ref_line, color="red", lw=1, ls="--")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, fontsize=10)
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=8)
+    fig.tight_layout()
+    return _save(fig, name)
+
+
 def metric_bars(df, metric, ylabel, name, hue="quantization.model"):
     """Grouped bars: mean +/- std of `metric` per dataset (and hue if present)."""
     fig, ax = plt.subplots(figsize=(9, 5))

@@ -44,6 +44,11 @@ def main():
                     help="f16 rescale ceiling; 0 disables rescaling (raw cast, overflow -> inf)")
     ap.add_argument("--probe", action=argparse.BooleanOptionalAction, default=True,
                     help="record per-iteration log2 range probes to probes.npz")
+    ap.add_argument("--probe-bins", type=int, default=None,
+                    help="log2 histogram bin count (default 144 = 1 bin/octave)")
+    ap.add_argument("--probe-snap", type=int, default=16,
+                    help="block-mean downsample factor for per-iteration image "
+                         "snapshots in probes.npz (0 disables)")
     args = ap.parse_args()
 
     d = Path(args.dataset)
@@ -64,7 +69,7 @@ def main():
         eps=args.eps, nthreads=args.nthreads,
         q_vis=args.q_vis, q_dirty=args.q_dirty, q_psf=args.q_psf, q_model=args.q_model,
         rescale_max=args.rescale_max if args.rescale_max > 0 else None,
-        probe=args.probe)
+        probe=args.probe, probe_bins=args.probe_bins, probe_snap=args.probe_snap)
     wall = time.time() - t0
 
     # A raw-cast (rescale_max=0) f16 run can overflow to inf/NaN; the pipeline
@@ -87,7 +92,9 @@ def main():
                   nthreads=args.nthreads,
                   quantization=dict(vis=args.q_vis, dirty=args.q_dirty,
                                     psf=args.q_psf, model=args.q_model),
-                  rescale_max=args.rescale_max, probe=bool(args.probe), npix=npix, cell_deg=cell,
+                  rescale_max=args.rescale_max, probe=bool(args.probe),
+                  probe_bins=args.probe_bins, probe_snap=args.probe_snap,
+                  npix=npix, cell_deg=cell,
                   nvis=int(vis.size), sigma_jy=meta.get("sigma_jy"),
                   field_dr=meta.get("field", {}).get("realized_dr"),
                   dataset_seed=meta.get("seed"), noise_seed=meta.get("noise_seed"))

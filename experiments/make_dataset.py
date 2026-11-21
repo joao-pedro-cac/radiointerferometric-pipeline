@@ -80,6 +80,8 @@ def main():
     ap.add_argument("--name", required=True)
     ap.add_argument("--n-point", type=int, default=1)
     ap.add_argument("--n-gauss", type=int, default=0)
+    ap.add_argument("--n-diffuse", type=int, default=0,
+                    help="number of diffuse (large-gaussian, 60-400 arcsec) components")
     ap.add_argument("--dr", type=float, default=1.0, help="intra-field DR = peak/faintest")
     ap.add_argument("--peak-flux", type=float, default=1.0, help="brightest source, Jy")
     ap.add_argument("--sigma", type=float, default=1e-4, help="per-visibility noise, Jy")
@@ -108,7 +110,8 @@ def main():
 
     rng = np.random.default_rng(args.seed)
     field = sky.sample_field(rng, args.n_point, args.n_gauss, args.dr,
-                             args.peak_flux, args.ra0, args.dec0, args.fov_deg)
+                             args.peak_flux, args.ra0, args.dec0, args.fov_deg,
+                             n_diffuse=args.n_diffuse)
     noise_rng = np.random.default_rng(args.noise_seed if args.noise_seed is not None else args.seed)
     sources = sky.to_sources(field, wcs, cell_arcsec)
     truth = sky.render(sources, args.npix)                    # display orientation, Jy/pixel
@@ -148,7 +151,8 @@ def main():
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
 
     print(f"dataset {args.name} -> {out}")
-    print(f"  sources={len(sources)} (point={args.n_point}, gauss={args.n_gauss}) "
+    print(f"  sources={len(sources)} (point={args.n_point}, gauss={args.n_gauss}, "
+          f"diffuse={args.n_diffuse}) "
           f"dr={meta['field']['realized_dr']:.4g} peak={args.peak_flux} Jy sigma={args.sigma} Jy")
     print(f"  truth sum={truth.sum():.6g} Jy peak={truth.max():.6g} Jy/pix  "
           f"vis |max|={np.abs(vis).max():.4g}  nvis={vis.size}")

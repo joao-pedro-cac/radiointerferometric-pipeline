@@ -77,29 +77,49 @@ def array_stats(x):
     )
 
 
-class ProbeCollector:
-    """Collects labelled snapshots {label: {hists, stats, scalars}} and
-    serializes to/from a flat npz-ready dict (keys "hist<i>__<var>",
-    "stat<i>__<var>__<field>", "scalar<i>__<name>", plus "probe_edges" and
-    "probe_labels"). Heterogeneous keys across snapshots are fine."""
+def downsample(a, factor):
+    """Block-mean downsample of a 2D array by an integer factor (edges trimmed).
+    Used for per-iteration image snapshots: displayable montages at ~1/256 of
+    the storage."""
+    a = np.asarray(a)
+    f = int(factor)
+    if f <= 1 or a.ndim != 2:
+        return a
+    ny, nx = (a.shape[0] // f) * f, (a.shape[1] // f) * f
+    b = a[:ny, :nx]
+    return b.reshape(ny // f, f, nx // f, f).mean(axis=(1, 3))
 
-    def __init__(self, lo=LOG2_LO, hi=LOG2_HI, nbins=NBINS):
+
+class ProbeCollector:
+    """Collects labelled snapshots {label: {hists, stats, scalars, images}} and
+    serializes to/from a flat npz-ready dict (keys "hist<i>__<var>",
+    "stat<i>__<var>__<field>", "scalar<i>__<name>", "img<i>__<var>", plus
+    "probe_edges" and "probe_labels"). Heterogeneous keys across snapshots are
+    fine. `images` are downsampled 2D snapshots (display montages); hists/stats
+    always run on the full-resolution arrays."""
+
+    def __init__(self, lo=LOG2_LO, hi=LOG2_HI, nbins=NBINS, snap_factor=0):
         self.lo, self.hi, self.nbins = float(lo), float(hi), int(nbins)
         self.edges = np.linspace(self.lo, self.hi, self.nbins + 1)
+        self.snap_factor = int(snap_factor)   # 0 = no image snapshots
         self.snaps = []
 
-    def snap(self, label, arrays=None, scalars=None):
-        s = dict(label=str(label), hists={}, stats={},
+    def snap(self, label, arrays=None, scalars=None, image_vars=()):
+        s = dict(label=str(label), hists={}, stats={}, images={},
                  scalars={k: float(v) for k, v in (scalars or {}).items()})
         for k, v in (arrays or {}).items():
             s["hists"][k], _ = log2_hist(v, edges=self.edges)
             s["stats"][k] = array_stats(v)
+            if self.snap_factor > 1 and k in image_vars:
+                s["images"][k] = downsample(np.asarray(v, np.float64),
+                                            self.snap_factor).astype(np.float32)
         self.snaps.append(s)
         return s
 
     def to_arrays(self):
         out = {"probe_edges": self.edges,
-               "probe_labels": np.array([s["label"] for s in self.snaps])}
+               "probe_labels": np.array([s["label"] for s in self.snaps]),
+               "probe_snap_factor": np.int64(self.snap_factor)}
         for i, s in enumerate(self.snaps):
             for k, c in s["hists"].items():
                 out[f"hist{i}__{k}"] = c
@@ -108,19 +128,24 @@ class ProbeCollector:
                     out[f"stat{i}__{k}__{kk}"] = np.float64(vv)
             for kk, vv in s["scalars"].items():
                 out[f"scalar{i}__{kk}"] = np.float64(vv)
+            for k, im in s.get("images", {}).items():
+                out[f"img{i}__{k}"] = im
         return out
 
     @classmethod
     def from_arrays(cls, d):
         edges = np.asarray(d["probe_edges"], dtype=np.float64)
-        c = cls(lo=edges[0], hi=edges[-1], nbins=edges.size - 1)
+        c = cls(lo=edges[0], hi=edges[-1], nbins=edges.size - 1,
+                snap_factor=int(d["probe_snap_factor"]) if "probe_snap_factor" in d else 0)
         c.edges = edges
         labels = [str(s) for s in d["probe_labels"]]
         for i, lab in enumerate(labels):
-            s = dict(label=lab, hists={}, stats={}, scalars={})
+            s = dict(label=lab, hists={}, stats={}, scalars={}, images={})
             for k in d.keys():
                 if k.startswith(f"hist{i}__"):
                     s["hists"][k[len(f"hist{i}__"):]] = np.asarray(d[k])
+                elif k.startswith(f"img{i}__"):
+                    s["images"][k[len(f"img{i}__"):]] = np.asarray(d[k])
                 elif k.startswith(f"stat{i}__"):
                     rest = k[len(f"stat{i}__"):]
                     var, field = rest.split("__", 1)

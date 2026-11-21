@@ -111,7 +111,7 @@ def compare_grid(root, sky, outdir, max_schemes=6):
         dn = r["params"]["dataset_name"]
         return Path(r["run_dir"]).name[len(dn) + 1:]
     runs.sort(key=lambda r: scheme_of(r))
-    schemes = [scheme_of(r) for r in runs][:max_schemes]
+    runs = runs[:max_schemes]
     vars_ = ["model", "residual", "vis_resid"]
     P.SAVE_FIGURES = True
     P.OUTPUT_DIR = Path(outdir)
@@ -140,7 +140,43 @@ def compare_grid(root, sky, outdir, max_schemes=6):
             ax.set_xlabel("log2 |value|", fontsize=8)
     fig.suptitle(f"log2 range probes per major cycle — {sky}", fontsize=12)
     fig.tight_layout()
-    return P._save(fig, f"probe_cmp_{sky}.png")
+    P._save(fig, f"probe_cmp_{sky}.png")
+    # per-iteration image montages (downsampled snaps): model / residual at
+    # k=1, mid, final — shows convergence (or its stall) as images
+    if any(s.get("images") for r in runs for s in ProbeCollector.from_arrays(r["probes"]).snaps):
+        import matplotlib.pyplot as plt
+        picks = ["k1", None, "final"]   # None -> middle k
+        cols = []
+        for var in ("model", "residual"):
+            for p in picks:
+                cols.append((var, p))
+        fig2, axes2 = plt.subplots(len(runs), len(cols),
+                                   figsize=(2.6 * len(cols), 2.4 * len(runs)),
+                                   squeeze=False)
+        for i, r in enumerate(runs):
+            pc = ProbeCollector.from_arrays(r["probes"])
+            ks = [s["label"] for s in pc.snaps if s["label"].startswith("k")]
+            mid = ks[len(ks) // 2] if ks else None
+            resolved = [p if p is not None else mid for (_, p) in cols]
+            for j, (var, p) in enumerate(zip([c[0] for c in cols], resolved)):
+                ax = axes2[i, j]
+                snap = next((s for s in pc.snaps if s["label"] == p), None)
+                if snap is None or var not in snap.get("images", {}):
+                    ax.axis("off"); continue
+                a = np.asarray(snap["images"][var], np.float64)
+                a[~np.isfinite(a)] = np.nan
+                scale = "log" if var == "model" else "symlog"
+                norm = P._stretch(a, scale)
+                cmap = P.SKY_CMAP if var == "model" else P.RESID_CMAP
+                im = ax.imshow(a, origin="lower", cmap=cmap, norm=norm)
+                ax.set_xticks([]); ax.set_yticks([])
+                ax.set_title(f"{var} {p}", fontsize=8)
+            axes2[i, 0].set_ylabel(scheme_of(r), fontsize=9)
+        fig2.suptitle(f"{sky}: per-iteration model / residual snapshots by scheme",
+                      fontsize=12)
+        fig2.tight_layout()
+        P._save(fig2, f"probe_img_{sky}.png")
+    return None
 
 
 def main():

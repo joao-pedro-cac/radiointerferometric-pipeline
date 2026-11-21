@@ -208,6 +208,64 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \end{itemize}
 \end{frame}
 
+\section{Batch 2 — sweeps: noise $\times$ DR $\times$ seeds (remote)}
+
+\begin{frame}{Batch 2 — design}
+\begin{itemize}
+\item Complex skies: S6 (12 gaussians, DR $10^5$) and S8 = 1000 sources
+  (700 points + 250 gaussians + 50 diffuse), DR log-ladder $10^2\to10^6$,
+  $\sigma=10^{-4}$ Jy, 2 noise seeds; noise ladder $\sigma\in\{10^{-2},10^{-3},10^{-6}\}$
+  on S8 DR $10^4$; sky-seed spread s42/s43/s44.
+\item 6 schemes: f64, all-f16, all-bf16, model-f16, vis-f16, dirty-f16
+  (f32 shown invisible, raw-cast shown NaN — both excluded).
+\item ~120 runs via \texttt{scripts/run_experiments.sh} under named screen
+  sessions; every run carries probes (log2 hists + per-iteration image
+  snapshots).
+\item Details below appear as results land (guarded frames).
+\end{itemize}
+\end{frame}
+
+\IfFileExists{../analysis/figures/batch2/sweep_sigma_ratio_residual_mad.png}{%
+\begin{frame}{Batch 2 — how noise changes the conclusions}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_sigma_ratio_residual_mad.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_sigma_resmad_over_noise.png}
+\end{column}
+\end{columns}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_residual_mad.png}{%
+\begin{frame}{Batch 2 — metric vs field DR (S8, 1000 sources)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_residual_mad.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_achieved_dr.png}
+\end{column}
+\end{columns}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_peak.png}{%
+\begin{frame}{Batch 2 — metric vs CLEAN iteration (S8 DR $10^4$)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_peak.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_mad.png}
+\end{column}
+\end{columns}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/probe_img_b2_S8mix1000_dr1e4_s42.png}{%
+\begin{frame}{Batch 2 — per-iteration model/residual snapshots by scheme (S8 DR $10^4$)}
+\includegraphics[height=0.82\textheight]{../analysis/figures/probe_img_b2_S8mix1000_dr1e4_s42.png}
+\end{frame}}{}
+
 \appendix
 
 \section*{Appendix}

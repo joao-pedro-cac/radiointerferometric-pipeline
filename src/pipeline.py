@@ -31,7 +31,8 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
                  gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10,
                  eps=1e-5, nthreads=8,
                  q_vis="float64", q_dirty="float64", q_psf="float64",
-                 q_model="float64", rescale_max=65503.0, probe=False):
+                 q_model="float64", rescale_max=65503.0, probe=False,
+                 probe_bins=None, probe_snap=0):
     """Run dirty image + PSF + CLEAN loop with per-stage quantization.
 
     Returns dict with arrays (dirty, psf, model, residual — native frame) and
@@ -39,9 +40,15 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
     If probe=True, also returns "probes": a probe.ProbeCollector with a log2
     histogram + stats snapshot of every stage array at init, after each major
     cycle, and at the end (see src/probe.py for the snapshot convention).
+    probe_bins overrides the histogram bin count; probe_snap>0 additionally
+    stores block-mean-downsampled image snapshots (factor probe_snap) of the
+    image stages per iteration for display montages.
     """
     t = {}
-    pc = probe_mod.ProbeCollector() if probe else None
+    pc = (probe_mod.ProbeCollector(nbins=probe_bins or probe_mod.NBINS,
+                                   snap_factor=probe_snap)
+          if probe else None)
+    IMG_VARS = ("dirty", "psf", "residual", "model")
 
     def _casts(d):
         # {name_cast: raw * scale} for stages whose scale != 1 (otherwise the
@@ -56,7 +63,8 @@ def run_pipeline(vis, uvw, freq, wgt, geom,
             return
         arrays = dict(arrays)
         arrays.update(casts or {})
-        pc.snap(label, arrays=arrays, scalars=scalars or {})
+        pc.snap(label, arrays=arrays, scalars=scalars or {},
+                image_vars=IMG_VARS)
 
     t0 = time.time()
     vis_eff, s_vis = _q_vis(vis, q_vis, rescale_max)

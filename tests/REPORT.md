@@ -1,7 +1,7 @@
 # Test report — v2 library gate
 
 Run: `cd code && $VENV_PATH/bin/python -m pytest tests/ -q` (pytest 8.4.2, numpy 1.26.4)
-Status: **43 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test and the probe gate)
+Status: **51 passed, 0 failed** (2026-11-21, incl. anti-BFP global-scale, probe gate, raw-cast-overflow, diffuse/bounded-render, probe bins/snapshots)
 
 | Area | Test | Analytic ground truth | Expected | Result |
 |---|---|---|---|---|
@@ -31,6 +31,12 @@ Status: **43 passed, 0 failed** (2026-11-20, incl. anti-BFP global-scale test an
 | probe | collector round-trip | `to_arrays`/`from_arrays` preserve labels, edges, hists, stats, scalars across heterogeneous snap keys | identity | pass |
 | probe | pipeline integration | `run_pipeline(probe=True)` returns snaps init/k*/final; hist sums = #nonzero of returned arrays; per-cycle scalars res_peak/res_mad/n_components/s_*; scales dict returned | synthetic ring uv | pass |
 | probe | cast arrays | with |vis|~1e6 and q-vis=f16 the rescale triggers (s_vis<1), `vis_cast` appears, modulus ≤ 65504·√2 (complex casts re/im separately), no bf16-range overflow | f16 envelope | pass |
+| probe | raw-cast overflow | rescale_max=None + |vis|~1e6: pipeline returns (non-finite arrays) with probes; frac_above_f16_max > 0 | overflow survivable + probed | pass |
+| probe | downsample / collector | block-mean shapes + edge trim; custom nbins + image snapshots round-trip via to_arrays/from_arrays (img<i>__ keys, probe_snap_factor) | identity | pass |
+| probe | pipeline bins/snaps | run_pipeline(probe_bins=288, probe_snap=8): 289 edges, img snaps (128/8)² float32, round-trip equal | synthetic ring uv | pass |
+| sky | diffuse render | kind="diffuse" renders as large gauss: sum=flux, peak=I/(2πσxσy) | analytic | pass |
+| sky | bounded render | gauss evaluated only in ±5σ box (outside exactly 0), truncated flux < 1e-5; 1000-source field (700pt+250g+50diff) renders < 30 s | analytic + budget | pass |
+| sky | sample_field diffuse | n_diffuse kinds/sizes/realized DR exact | analytic | pass |
 
 Notes:
 - Högbom's `3×MAD` threshold dominates when the dirty image is noise-dominated;
