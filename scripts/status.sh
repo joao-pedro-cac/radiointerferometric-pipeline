@@ -40,4 +40,4 @@ for d in "$BATCH_ROOT"/exp_*; do
   head -1 "$d/summary.csv"
   tail -n +2 "$d/summary.csv" | tail -6
 done
-[ "$found" -eq 0 ] && echo "(no summary.csv yet — per-run logs: $LOGS/<exp>_<ts>.log, per-exp dirs: $BATCH_ROOT/exp_*)"
+[ "$found" -eq 0 ] && echo "(no summary.csv yet — live exp logs: $LOGS/<exp>_<ts>.log)"

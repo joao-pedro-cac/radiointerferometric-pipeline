@@ -50,8 +50,21 @@ def main():
                     help="block-mean downsample factor for per-iteration image "
                          "snapshots in probes.npz (0 disables)")
     args = ap.parse_args()
+    run(dataset=args.dataset, out=args.out, gamma=args.gamma, pf=args.pf,
+        maxiter=args.maxiter, loop_max=args.loop_max, eps=args.eps,
+        nthreads=args.nthreads, q_vis=args.q_vis, q_dirty=args.q_dirty,
+        q_psf=args.q_psf, q_model=args.q_model, rescale_max=args.rescale_max,
+        probe=args.probe, probe_bins=args.probe_bins, probe_snap=args.probe_snap)
 
-    d = Path(args.dataset)
+
+def run(dataset, out, gamma=0.1, pf=1e-4, maxiter=10000, loop_max=10, eps=1e-5,
+        nthreads=8, q_vis="float64", q_dirty="float64", q_psf="float64",
+        q_model="float64", rescale_max=65503.0, probe=True, probe_bins=None,
+        probe_snap=16):
+    """Run the full pipeline on a dataset dir and write a self-describing run
+    dir (results.npz + probes.npz + params.json + metrics.json + info.yaml).
+    Callable in-process (used by run_batch.py) or via the CLI."""
+    d = Path(dataset)
     obs = np.load(d / "obs.npz")
     truth = np.squeeze(fits.getdata(d / "truth.fits")).astype(np.float64)
     meta = json.loads((d / "meta.json").read_text()) if (d / "meta.json").exists() else {}
@@ -63,13 +76,13 @@ def main():
     uvw, freq, vis, wgt = obs["uvw"], obs["freq"], obs["vis"], obs["weight"]
 
     t0 = time.time()
-    out = pipeline.run_pipeline(
+    res = pipeline.run_pipeline(
         vis, uvw, freq, wgt, geom,
-        gamma=args.gamma, pf=args.pf, maxiter=args.maxiter, loop_max=args.loop_max,
-        eps=args.eps, nthreads=args.nthreads,
-        q_vis=args.q_vis, q_dirty=args.q_dirty, q_psf=args.q_psf, q_model=args.q_model,
-        rescale_max=args.rescale_max if args.rescale_max > 0 else None,
-        probe=args.probe, probe_bins=args.probe_bins, probe_snap=args.probe_snap)
+        gamma=gamma, pf=pf, maxiter=maxiter, loop_max=loop_max,
+        eps=eps, nthreads=nthreads,
+        q_vis=q_vis, q_dirty=q_dirty, q_psf=q_psf, q_model=q_model,
+        rescale_max=rescale_max if rescale_max > 0 else None,
+        probe=probe, probe_bins=probe_bins, probe_snap=probe_snap)
     wall = time.time() - t0
 
     # A raw-cast (rescale_max=0) f16 run can overflow to inf/NaN; the pipeline
@@ -78,7 +91,7 @@ def main():
     # archive lost exactly these runs).
     err = None
     try:
-        m = pipeline.compute_metrics(out["model"], out["residual"], out["psf"], truth)
+        m = pipeline.compute_metrics(res["model"], res["residual"], res["psf"], truth)
     except Exception as e:  # noqa: BLE001 - any failure here must not lose the run
         err = f"{type(e).__name__}: {e}"
         m = dict(cross_correlation=float("nan"), flux_conservation=float("nan"),
@@ -87,46 +100,46 @@ def main():
                  beam_bmaj_px=float("nan"), beam_bmin_px=float("nan"),
                  beam_area_px=float("nan"), restored_peak=float("nan"))
 
-    params = dict(dataset=str(d), dataset_name=d.name, gamma=args.gamma, pf=args.pf,
-                  maxiter=args.maxiter, loop_max=args.loop_max, eps=args.eps,
-                  nthreads=args.nthreads,
-                  quantization=dict(vis=args.q_vis, dirty=args.q_dirty,
-                                    psf=args.q_psf, model=args.q_model),
-                  rescale_max=args.rescale_max, probe=bool(args.probe),
-                  probe_bins=args.probe_bins, probe_snap=args.probe_snap,
+    params = dict(dataset=str(d), dataset_name=d.name, gamma=gamma, pf=pf,
+                  maxiter=maxiter, loop_max=loop_max, eps=eps,
+                  nthreads=nthreads,
+                  quantization=dict(vis=q_vis, dirty=q_dirty,
+                                    psf=q_psf, model=q_model),
+                  rescale_max=rescale_max, probe=bool(probe),
+                  probe_bins=probe_bins, probe_snap=probe_snap,
                   npix=npix, cell_deg=cell,
                   nvis=int(vis.size), sigma_jy=meta.get("sigma_jy"),
                   field_dr=meta.get("field", {}).get("realized_dr"),
                   dataset_seed=meta.get("seed"), noise_seed=meta.get("noise_seed"))
-    metrics = dict(m, n_major_cycles=out["n_major_cycles"],
-                   converged_reason=out["converged_reason"],
-                   n_components=out["n_components"],
-                   psf_peak=out["psf_peak"],
-                   scales={k: float(v) for k, v in out["scales"].items()},
-                   wall_time_s=wall, **{f"time_{k}": v for k, v in out["timing"].items()})
+    metrics = dict(m, n_major_cycles=res["n_major_cycles"],
+                   converged_reason=res["converged_reason"],
+                   n_components=res["n_components"],
+                   psf_peak=res["psf_peak"],
+                   scales={k: float(v) for k, v in res["scales"].items()},
+                   wall_time_s=wall, **{f"time_{k}": v for k, v in res["timing"].items()})
     if err is not None:
         metrics["error"] = err
 
     # restored image for display (display frame)
     try:
-        bmaj, bmin, pa = operators.synth_beam_from_psf(out["psf"])
+        bmaj, bmin, pa = operators.synth_beam_from_psf(res["psf"])
         kern = operators.make_beam_kernel(bmaj, bmin, pa)
-        restored = operators.restore(operators.to_display(out["model"]), kern)
+        restored = operators.restore(operators.to_display(res["model"]), kern)
     except Exception:  # noqa: BLE001
-        restored = np.full(out["model"].shape, np.nan, dtype=np.float32)
+        restored = np.full(res["model"].shape, np.nan, dtype=np.float32)
 
-    outdir = Path(args.out)
+    outdir = Path(out)
     outdir.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         outdir / "results.npz",
         truth=truth.astype(np.float32),
-        dirty=(operators.to_display(out["dirty"]) / out["psf_peak"]).astype(np.float32),   # Jy/beam
-        model=operators.to_display(out["model"]).astype(np.float32),                       # Jy
+        dirty=(operators.to_display(res["dirty"]) / res["psf_peak"]).astype(np.float32),   # Jy/beam
+        model=operators.to_display(res["model"]).astype(np.float32),                       # Jy
         restored=restored.astype(np.float32),                                               # Jy/beam
-        residual=operators.to_display(out["residual"]).astype(np.float32),                 # Jy/beam
-        psf_lobe=(_psf_lobe(out["psf"]) / out["psf_peak"]).astype(np.float32))             # peak 1
-    if args.probe and out.get("probes") is not None:
-        np.savez_compressed(outdir / "probes.npz", **out["probes"].to_arrays())
+        residual=operators.to_display(res["residual"]).astype(np.float32),                 # Jy/beam
+        psf_lobe=(_psf_lobe(res["psf"]) / res["psf_peak"]).astype(np.float32))             # peak 1
+    if probe and res.get("probes") is not None:
+        np.savez_compressed(outdir / "probes.npz", **res["probes"].to_arrays())
     # params + metrics as sidecar files: the run dir is fully self-describing
     (outdir / "params.json").write_text(json.dumps(params, indent=2))
     (outdir / "metrics.json").write_text(json.dumps(metrics, indent=2))

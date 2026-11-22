@@ -117,51 +117,44 @@ def test_wait_batch_collect_and_render(tmp_path):
     assert rc == 2  # not complete
 
 
-def test_log_file_tee_writes_banner(tmp_path):
-    dataset_root = tmp_path / "ds"
-    for prefix in run_batch.PLANS["exp_seeds"][0]:
-        d = dataset_root / f"{prefix}_n103"
-        d.mkdir(parents=True); (d / "obs.npz").write_bytes(b"x")
-    log = tmp_path / "session.log"
-    rc = run_batch.main(["--exp", "exp_seeds", "--dry",
-                         "--dataset-root", str(dataset_root),
-                         "--batch-root", str(tmp_path / "batch"),
-                         "--log-file", str(log)])
-    assert rc == 0
-    txt = log.read_text()
-    assert "run_batch starting" in txt and "to run=18" in txt and "DRY" in txt
+def test_run_one_inprocess_failure_is_recorded(tmp_path):
+    # missing dataset -> run_clean.run raises -> run_one catches, marks failed
+    job = dict(exp="exp3_range", dataset=str(tmp_path / "nope"), run=str(tmp_path / "run1"),
+               run_name="run1", scheme="f64", done=False)
+    progress = dict(total=1, done=[], running=[], failed=[], walls={}, metrics={}, errors={})
+    rc, wall, m = run_batch.run_one(job, 1, progress)
+    assert rc == 1 and progress["failed"] == ["run1"] and progress["errors"]["run1"]
+    # progress.json written next to the run dir
+    import json
+    pj = json.loads((tmp_path / "progress.json").read_text())
+    assert pj["failed"] == ["run1"]
 
 
 def test_batch3_plans_counts_and_schemes(tmp_path):
     dataset_root = tmp_path / "ds"; exp_root = tmp_path / "out"
-    # exp3_mc: 3 sky seeds x 2 noise seeds x 4 schemes
     assert len(run_batch.build_jobs("exp3_mc", dataset_root, exp_root)) == 3 * 2 * 4
-    # exp3_range: 2 peak-flux skies x 1 noise seed x 4 schemes
     assert len(run_batch.build_jobs("exp3_range", dataset_root, exp_root)) == 2 * 1 * 4
-    # exp3_floor: 4 skies (2 fields x 2 sigma) x 1 seed x 5 schemes (incl. allf32)
     jobs = run_batch.build_jobs("exp3_floor", dataset_root, exp_root)
     assert len(jobs) == 4 * 1 * 5
     assert {j["scheme"] for j in jobs} == {"f64", "allf32", "allf16", "allbf16", "modelf16"}
-    # allf32 maps to float32 on every stage
     a = run_batch.scheme_args("allf32")
     assert all(x == "float32" for x in a[1:8:2])
-    # batch-2 plans unchanged (all schemes)
-    assert len(run_batch.build_jobs("exp_seeds", dataset_root, exp_root)) == 18
+    assert len(run_batch.build_jobs("exp_seeds", dataset_root, exp_root)) == 18  # B2 pinned
 
 
 def test_print_skies_exps_filter():
-    import subprocess, sys
+    import subprocess
     out = subprocess.run([sys.executable, str(CODE_ROOT / "experiments" / "run_batch.py"),
                           "--print-skies", "--exps", "exp3_range"],
                          capture_output=True, text=True)
     assert out.returncode == 0
-    names = [run_batch.spec_name(s) for s in out.stdout.split()]
-    assert names == ["b3_point_peak1e5", "b3_point_peak1e6"]
+    assert [run_batch.spec_name(s) for s in out.stdout.split()] == \
+        ["b3_point_peak1e5", "b3_point_peak1e6"]
 
 
 def test_dry_run_multi_exp(tmp_path, capsys):
     dataset_root = tmp_path / "ds"
-    for prefixes, seeds, _ in run_batch.PLANS.values():
+    for prefixes, seeds, _schemes in run_batch.PLANS.values():
         for prefix in prefixes:
             for nseed in seeds + ["201", "202", "301", "401"]:
                 d = dataset_root / run_batch.dataset_name(prefix, nseed)

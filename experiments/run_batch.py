@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-"""Batch-2 runner: ONE python process per experiment, run inside a screen
-session, with an internal worker pool. No bash sleep/poll loops.
+"""Batch experiment runner — deliberately simple: one foreground process per
+experiment, jobs run SEQUENTIALLY in-process (run_clean.run). Process launching
+is done ONLY by the bash launcher (run_experiment.sh) — python never spawns
+python.
 
     python experiments/run_batch.py --list-exps
-    python experiments/run_batch.py --print-skies        # used by simulate_data.sh
-    python experiments/run_batch.py --exp exp_dr --dry    # print the plan only
-    python experiments/run_batch.py --exp exp_dr          # run (resumes: skips done runs)
-
-Each job is a subprocess of run_clean.py with its own thread allocation
-(--nthreads NTHREADS plus OMP/NUMBA env), so size the machine as
-MAXJOBS x NTHREADS ~= cores. Per-run log: <exp_root>/logs/<run>.log.
-Live progress: <exp_root>/progress.json (atomic writes) — watch it with
-`screen -r b2_wait` (experiments/wait_batch.py) or `tail -f` the logs.
-Final: <exp_root>/summary.csv aggregated from each run's metrics.json.
+    python experiments/run_batch.py --print-skies [--exps exp3_mc ...]
+    python experiments/run_batch.py --exp exp_dr --dry     # print the plan
+    python experiments/run_batch.py --exp exp_dr           # run (resume-safe)
 
 Plans (skies x noise seeds x schemes) are defined below — single source of
-truth shared with simulate_data.sh via --print-skies.
+truth shared with simulate_data.sh via --print-skies. Per-run progress:
+<exp_root>/progress.json (atomic); final: <exp_root>/summary.csv. Everything
+the process prints lands in the experiment log (nohup redirect), live.
 """
 import argparse
 import csv
 import json
 import os
-import subprocess
 import sys
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -148,41 +142,42 @@ def _default_roots():
     return dataset_root, batch_root
 
 
-def run_one(job, nthreads, log_dir, progress, lock):
-    """Run a single CLEAN job as a subprocess with its own thread allocation."""
+def run_one(job, nthreads, progress):
+    """Run one job IN-PROCESS via run_clean.run (python never spawns python —
+    process launching is the bash launcher's job). A crash is caught and
+    recorded as a failed run with its traceback in the experiment log."""
+    import traceback
+    sys.path.insert(0, str(CODE_ROOT / "experiments"))
+    import run_clean
     name = job["run_name"]
-    run_dir = Path(job["run"]); run_dir.mkdir(parents=True, exist_ok=True)
-    log_path = Path(log_dir) / f"{name}.log"
-    cmd = [sys.executable, str(CODE_ROOT / "experiments" / "run_clean.py"),
-           "--dataset", job["dataset"], "--out", str(run_dir),
-           "--gamma", CLEAN_DEFAULTS["gamma"], "--pf", CLEAN_DEFAULTS["pf"],
-           "--maxiter", CLEAN_DEFAULTS["maxiter"], "--loop-max", CLEAN_DEFAULTS["loop_max"],
-           "--nthreads", str(nthreads)] + scheme_args(job["scheme"])
-    env = dict(os.environ, OMP_NUM_THREADS=str(nthreads),
-               NUMBA_NUM_THREADS=str(nthreads), MKL_NUM_THREADS=str(nthreads))
+    qv, qd, qp, qm, rmax = SCHEMES[job["scheme"]]
     t0 = time.time()
-    with lock:
-        progress["running"].append(name)
-        _atomic_write_json(Path(job["run"]).parent / "progress.json", progress)
-    print(f"[{job['exp']}] start {name}  (log {log_path.name})", flush=True)
-    with open(log_path, "w") as lf:
-        rc = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env).returncode
+    progress["running"].append(name)
+    _atomic_write_json(Path(job["run"]).parent / "progress.json", progress)
+    print(f"[{job['exp']}] start {name}", flush=True)
+    err = None
+    try:
+        run_clean.run(dataset=job["dataset"], out=job["run"],
+                      gamma=float(CLEAN_DEFAULTS["gamma"]), pf=float(CLEAN_DEFAULTS["pf"]),
+                      maxiter=int(CLEAN_DEFAULTS["maxiter"]), loop_max=int(CLEAN_DEFAULTS["loop_max"]),
+                      nthreads=nthreads, q_vis=qv, q_dirty=qd, q_psf=qp, q_model=qm,
+                      rescale_max=float(rmax))
+    except Exception:  # noqa: BLE001 - one bad run must not kill the batch
+        err = traceback.format_exc()
+        print(err, flush=True)
     wall = time.time() - t0
     metrics = {}
-    mp = run_dir / "metrics.json"
+    mp = Path(job["run"]) / "metrics.json"
     if mp.exists():
         metrics = json.loads(mp.read_text())
-    with lock:
-        progress["running"].remove(name)
-        if rc != 0:
-            progress["failed"].append(name)
-        else:
-            progress["done"].append(name)
-        progress["walls"][name] = wall
-        progress["metrics"][name] = metrics
-        progress["updated"] = datetime.now(timezone.utc).isoformat()
-        _atomic_write_json(Path(job["run"]).parent / "progress.json", progress)
-    return rc, wall, metrics
+    progress["running"].remove(name)
+    progress["failed" if err else "done"].append(name)
+    progress["walls"][name] = wall
+    progress["metrics"][name] = metrics
+    progress["errors"][name] = err or ""
+    progress["updated"] = datetime.now(timezone.utc).isoformat()
+    _atomic_write_json(Path(job["run"]).parent / "progress.json", progress)
+    return (1 if err else 0), wall, metrics
 
 
 def write_summary(exp_root, jobs, progress):
@@ -205,18 +200,6 @@ def write_summary(exp_root, jobs, progress):
     return out
 
 
-class _Tee:
-    """Write to several streams, flushing each — keeps session logs live."""
-    def __init__(self, *streams):
-        self.streams = streams
-    def write(self, s):
-        for st in self.streams:
-            st.write(s); st.flush()
-    def flush(self):
-        for st in self.streams:
-            st.flush()
-
-
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -226,17 +209,10 @@ def main(argv=None):
     ap.add_argument("--exps", nargs="*", default=None,
                     help="with --print-skies: only skies of these plans")
     ap.add_argument("--dry", action="store_true", help="print the plan, run nothing")
-    ap.add_argument("--maxjobs", type=int, default=int(os.environ.get("MAXJOBS", "8")))
     ap.add_argument("--nthreads", type=int, default=int(os.environ.get("NTHREADS", "4")))
     ap.add_argument("--dataset-root", default=None)
     ap.add_argument("--batch-root", default=None)
-    ap.add_argument("--log-file", default=None,
-                    help="tee stdout to this file (session log); launchers pass -u python too")
     args = ap.parse_args(argv)
-
-    if args.log_file:
-        lf = open(args.log_file, "a")
-        sys.stdout = _Tee(sys.__stdout__, lf)
 
     if args.list_exps:
         print(" ".join(PLANS)); return 0
@@ -248,15 +224,15 @@ def main(argv=None):
             print(" ".join(SKIES))
         return 0
 
+    exps = list(PLANS) if args.exp == ["all"] else args.exp
     dataset_root, batch_root = _default_roots()
     dataset_root = args.dataset_root or dataset_root
     batch_root = args.batch_root or batch_root
-    exps = list(PLANS) if args.exp == ["all"] else args.exp
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     for exp in exps:
         exp_root = Path(batch_root) / f"{exp}_{ts}"
-        log_dir = exp_root / "logs"; log_dir.mkdir(parents=True, exist_ok=True)
+        exp_root.mkdir(parents=True, exist_ok=True)
         # banner first — the log must show life immediately, even if the run
         # then fails (e.g. missing datasets)
         print(f"[{exp}] run_batch starting {ts}  python={sys.executable}", flush=True)
@@ -269,28 +245,24 @@ def main(argv=None):
             return 1
         todo = [j for j in jobs if not j["done"]]
         print(f"[{exp}] jobs={len(jobs)}  already done={len(jobs)-len(todo)}  to run={len(todo)}  "
-              f"maxjobs={args.maxjobs} nthreads={args.nthreads}  (maxjobs*nthreads={args.maxjobs*args.nthreads} threads)",
-              flush=True)
+              f"sequential, nthreads={args.nthreads}", flush=True)
         if args.dry:
             for j in todo:
                 print(f"  DRY {j['run_name']}  dataset={Path(j['dataset']).name}  {' '.join(scheme_args(j['scheme']))}",
                       flush=True)
             continue
         progress = dict(exp=exp, ts=ts, total=len(jobs), done=[j["run_name"] for j in jobs if j["done"]],
-                        running=[], failed=[], walls={}, metrics={},
+                        running=[], failed=[], walls={}, metrics={}, errors={},
                         started=datetime.now(timezone.utc).isoformat(), updated="")
         _atomic_write_json(exp_root / "progress.json", progress)
-        lock = threading.Lock()
         t0 = time.time()
-        with ThreadPoolExecutor(max_workers=args.maxjobs) as pool:
-            futs = {pool.submit(run_one, j, args.nthreads, log_dir, progress, lock): j for j in todo}
-            for fut in futs:
-                rc, wall, m = fut.result()
-                name = futs[fut]["run_name"]
-                print(f"[{exp}] ({len(progress['done'])+len(progress['failed'])}/{len(jobs)}) "
-                      f"{'ok ' if rc == 0 else 'FAIL'} {name} ({wall:.0f}s) "
-                      f"resMAD={m.get('residual_mad', float('nan')):.3g} achDR={m.get('achieved_dr', float('nan')):.3g}",
-                      flush=True)
+        for j in todo:   # sequential on purpose — see run_one docstring
+            rc, wall, m = run_one(j, args.nthreads, progress)
+            name = j["run_name"]
+            print(f"[{exp}] ({len(progress['done'])+len(progress['failed'])}/{len(jobs)}) "
+                  f"{'ok ' if rc == 0 else 'FAIL'} {name} ({wall:.0f}s) "
+                  f"resMAD={m.get('residual_mad', float('nan')):.3g} achDR={m.get('achieved_dr', float('nan')):.3g}",
+                  flush=True)
         summary = write_summary(exp_root, jobs, progress)
         print(f"[{exp}] complete in {time.time()-t0:.0f}s — summary: {summary} "
               f"(failed: {len(progress['failed'])})", flush=True)
