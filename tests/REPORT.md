@@ -31,7 +31,7 @@ Status: **51 passed, 0 failed** (2026-11-21, incl. anti-BFP global-scale, probe 
 | probe | collector round-trip | `to_arrays`/`from_arrays` preserve labels, edges, hists, stats, scalars across heterogeneous snap keys | identity | pass |
 | probe | pipeline integration | `run_pipeline(probe=True)` returns snaps init/k*/final; hist sums = #nonzero of returned arrays; per-cycle scalars res_peak/res_mad/n_components/s_*; scales dict returned | synthetic ring uv | pass |
 | probe | cast arrays | with |vis|~1e6 and q-vis=f16 the rescale triggers (s_vis<1), `vis_cast` appears, modulus ≤ 65504·√2 (complex casts re/im separately), no bf16-range overflow | f16 envelope | pass |
-| probe | raw-cast overflow | rescale_max=None + |vis|~1e6: pipeline returns (non-finite arrays) with probes; frac_above_f16_max > 0 | overflow survivable + probed | pass |
+| probe | raw-cast overflow | rescale_max=None + |vis|~1e6, stage-wise: fixture |vis|>65504; raw cast (scale=1) overflows to inf; pipeline returns with probes and frac_above_f16_max > 0 | overflow survivable + probed | pass |
 | probe | downsample / collector | block-mean shapes + edge trim; custom nbins + image snapshots round-trip via to_arrays/from_arrays (img<i>__ keys, probe_snap_factor) | identity | pass |
 | probe | pipeline bins/snaps | run_pipeline(probe_bins=288, probe_snap=8): 289 edges, img snaps (128/8)² float32, round-trip equal | synthetic ring uv | pass |
 | sky | diffuse render | kind="diffuse" renders as large gauss: sum=flux, peak=I/(2πσxσy) | analytic | pass |

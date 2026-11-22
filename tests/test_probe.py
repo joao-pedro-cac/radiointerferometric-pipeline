@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from src import operators, pipeline, probe
+from src import operators, pipeline, probe, quantize
 
 
 # ---------- log2_hist ----------
@@ -177,17 +177,23 @@ def test_pipeline_probe_snaps_and_scales():
 def test_pipeline_raw_cast_overflow_survives_and_is_probed():
     # rescale_max=None + |vis| ~ 1e6 > 65504: raw f16 cast overflows to inf,
     # the pipeline must still return (arrays may be non-finite) with probes.
+    # Stage-by-stage asserts so a failure on another platform pinpoints the stage.
     geom = _geom(128)
     uvw, freq = _ring_uv(64)
     wgt = np.ones((64, 1))
     vis = _tiny_vis(geom, uvw, freq, scale=1e6)
+    # stage 1: the fixture itself must exceed the f16 range (65504)
+    assert np.abs(vis).max() > 65504.0, f"fixture |vis|max={np.abs(vis).max()}"
+    # stage 2: raw cast (rescale_max=None -> scale 1.0) must overflow to inf
+    q, s = quantize.quantize_visibilities(vis, "float16", rescale_max=None)
+    assert s == 1.0 and not np.isfinite(q).all()
+    # stage 3: the pipeline survives and the probes recorded the overflow
     with np.errstate(over="ignore", invalid="ignore"):
         out = pipeline.run_pipeline(vis, uvw, freq, wgt, geom, loop_max=2,
                                     nthreads=1, probe=True, q_vis="float16",
                                     rescale_max=None)
     assert "probes" in out
-    assert [s["label"] for s in out["probes"].snaps][0] == "init"
-    assert not np.isfinite(out["dirty"]).all()          # overflow did happen
+    assert [snap["label"] for snap in out["probes"].snaps][0] == "init"
     init = out["probes"].snaps[0]
     assert init["stats"]["vis"]["frac_above_f16_max"] > 0.0
 
