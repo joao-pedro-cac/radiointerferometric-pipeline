@@ -43,19 +43,8 @@ MAXJOBS="${MAXJOBS:-1}"
 NOISE_SEEDS="${NOISE_SEEDS:-101}"
 
 # name:n_point:n_gauss:n_diffuse:dr:peak_flux:sigma:sky_seed   (space-separated)
-SKIES="${SKIES:-"
-b2_S6_gauss_dr1e5_s42:0:12:0:1e5:1.0:1e-4:42
-b2_S8mix1000_dr1e2_s42:700:250:50:1e2:1.0:1e-4:42
-b2_S8mix1000_dr1e3_s42:700:250:50:1e3:1.0:1e-4:42
-b2_S8mix1000_dr1e4_s42:700:250:50:1e4:1.0:1e-4:42
-b2_S8mix1000_dr1e5_s42:700:250:50:1e5:1.0:1e-4:42
-b2_S8mix1000_dr1e6_s42:700:250:50:1e6:1.0:1e-4:42
-b2_S8mix1000_dr1e4_s43:700:250:50:1e4:1.0:1e-4:43
-b2_S8mix1000_dr1e4_s44:700:250:50:1e4:1.0:1e-4:44
-b2_S8mix1000_dr1e4_s42_sig1e-2:700:250:50:1e4:1.0:1e-2:42
-b2_S8mix1000_dr1e4_s42_sig1e-3:700:250:50:1e4:1.0:1e-3:42
-b2_S8mix1000_dr1e4_s42_sig1e-6:700:250:50:1e4:1.0:1e-6:42
-"}"
+# Default: the batch-2 plan's sky specs, single source of truth in run_batch.py
+SKIES="${SKIES:-$("$PY" "$HERE/experiments/run_batch.py" --print-skies)}"
 
 DRY=0
 [ "${1:-}" = "--dry" ] && DRY=1

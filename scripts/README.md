@@ -25,20 +25,29 @@ Canonical OSKAR re-simulation (optional, singularity mandatory — set in env.sh
 (default `<stage>/lib/OSKAR-2.12.2-Python3.sif`), `TELESCOPE_DIR` (default
 `<stage>/data/oskar/telescopes`), `TELESCOPE=meerkat.tm`.
 
-Batch 2 experiments (dispatcher `run_experiments.sh`, schemes in `batch2_common.sh`,
-datasets via `make_ladder_v3.sh`):
+Batch 2 (DR x noise x seeds sweeps) — one python process per experiment:
 
-- `exp_dr.sh` — S6 + S8(1000 src) DR ladder 1e2..1e6, σ=1e-4, noise seeds 101 102
-  → `results/batch2/exp_dr_<ts>/`
-- `exp_noise.sh` — S8 DR 1e4 at σ=1e-2/1e-3/1e-6, noise seeds 101 102
-  → `results/batch2/exp_noise_<ts>/`
-- `exp_seeds.sh` — S8 DR 1e4 sky seeds s42/s43/s44, noise seed 103
-  → `results/batch2/exp_seeds_<ts>/`
+```bash
+bash run_experiment.sh --dry        # preview (screen sessions + plan sizes)
+bash run_experiment.sh              # launch b2_exp_dr b2_exp_noise b2_exp_seeds + b2_wait
+MAX_SCREENS=1 MAXJOBS=8 NTHREADS=4 bash run_experiment.sh   # serialize sessions if needed
+screen -r b2_exp_dr                 # live per-run output of one experiment
+screen -r b2_wait                   # live table (total/done/running/failed per exp)
+tail -f results/batch2/logs/exp_dr_*.log
+```
 
-Older single studies (still location-agnostic): `study_f64_baseline.sh`,
-`study_quant_schemes.sh`, `study_sweep_v3.sh` — e.g.
-`MAXJOBS=8 SKIES="S0_point1 S2_mixed_dr100" NOISE_SEEDS="101 102" bash scripts/study_quant_schemes.sh`
-(self-copies into a timestamped results dir).
+- `experiments/run_batch.py` is the single source of truth: sky specs (SKIES),
+  quantization schemes (SCHEMES), and per-experiment plans (PLANS:
+  exp_dr = 6 skies x noise seeds 101/102, exp_noise = sigma ladder x 101/102,
+  exp_seeds = sky seeds s42/43/44 x noise seed 103; 6 schemes each, 126 runs).
+  Resume-safe: rerunning skips runs whose results.npz exists.
+  `--dry` prints the plan; `--print-skies` feeds simulate_data.sh.
+- Each job is a subprocess of `run_clean.py` with `--nthreads NTHREADS`
+  (OMP/NUMBA env set too), so MAXJOBS x NTHREADS should match the cores.
+- Per-run logs: `<exp_root>/logs/<run>.log`; live progress:
+  `<exp_root>/progress.json`; final table: `<exp_root>/summary.csv`.
+- `experiments/wait_batch.py --root results/batch2 [--once]` is the wait/monitor
+  (used by the b2_wait session; `--once` exits 2 while incomplete, 0 when done).
 
 Then pull `results/` back and regenerate the render locally:
 
