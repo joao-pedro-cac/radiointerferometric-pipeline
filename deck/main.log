@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.24)  21 NOV 2026 15:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.8.24)  22 NOV 2026 13:52
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1266,246 +1266,365 @@ LaTeX Font Info:    Font shape `T1/phv/m/sl' will be
 ] [19
 
 ]
+<../analysis/figures/batch2/noise_ratio_residual_mad.png, id=205, 533.8344pt x 
+351.714pt>
+File: ../analysis/figures/batch2/noise_ratio_residual_mad.png Graphic file (typ
+e png)
+<use ../analysis/figures/batch2/noise_ratio_residual_mad.png>
+Package pdftex.def Info: ../analysis/figures/batch2/noise_ratio_residual_mad.pn
+g  used on input line 246.
+(pdftex.def)             Requested size: 195.1881pt x 128.59726pt.
+<../analysis/figures/batch2/noise_resmad_over_noise.png, id=206, 533.8344pt x 3
+51.714pt>
+File: ../analysis/figures/batch2/noise_resmad_over_noise.png Graphic file (type
+ png)
+<use ../analysis/figures/batch2/noise_resmad_over_noise.png>
+Package pdftex.def Info: ../analysis/figures/batch2/noise_resmad_over_noise.png
+  used on input line 246.
+(pdftex.def)             Requested size: 195.1881pt x 128.59726pt.
+ [20
+
+ <../analysis/figures/batch2/noise_ratio_residual_mad.png> <../analysis/figures
+/batch2/noise_resmad_over_noise.png>]
+<../analysis/figures/batch2/seeds_ratio_achieved_dr.png, id=214, 533.8344pt x 3
+52.6776pt>
+File: ../analysis/figures/batch2/seeds_ratio_achieved_dr.png Graphic file (type
+ png)
+<use ../analysis/figures/batch2/seeds_ratio_achieved_dr.png>
+Package pdftex.def Info: ../analysis/figures/batch2/seeds_ratio_achieved_dr.png
+  used on input line 264.
+(pdftex.def)             Requested size: 195.1881pt x 128.94957pt.
+<../analysis/figures/batch2/seeds_ratio_residual_mad.png, id=215, 533.8344pt x 
+352.6776pt>
+File: ../analysis/figures/batch2/seeds_ratio_residual_mad.png Graphic file (typ
+e png)
+<use ../analysis/figures/batch2/seeds_ratio_residual_mad.png>
+Package pdftex.def Info: ../analysis/figures/batch2/seeds_ratio_residual_mad.pn
+g  used on input line 264.
+(pdftex.def)             Requested size: 195.1881pt x 128.94957pt.
+ [21
+
+ <../analysis/figures/batch2/seeds_ratio_achieved_dr.png> <../analysis/figures/
+batch2/seeds_ratio_residual_mad.png>]
+<../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.png, id=226, 533.
+8344pt x 352.6776pt>
+File: ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.png Graphic 
+file (type png)
+<use ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.png>
+Package pdftex.def Info: ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_re
+s_peak.png  used on input line 281.
+(pdftex.def)             Requested size: 195.1881pt x 128.94957pt.
+<../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png, id=227, 533.8
+344pt x 352.6776pt>
+File: ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png Graphic f
+ile (type png)
+<use ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png>
+Package pdftex.def Info: ../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_re
+s_mad.png  used on input line 281.
+(pdftex.def)             Requested size: 195.1881pt x 128.94957pt.
+ [22
+
+ <../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.png> <../analysi
+s/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png>]
+<../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baseline.pn
+g, id=235, 1076.3412pt x 669.702pt>
+File: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baseli
+ne.png Graphic file (type png)
+<use ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baselin
+e.png>
+Package pdftex.def Info: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4
+_s42_103_f64-baseline.png  used on input line 293.
+(pdftex.def)             Requested size: 131.45245pt x 81.78119pt.
+<../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df16-pf16-
+mf16.png, id=236, 1076.3412pt x 669.702pt>
+File: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df16-
+pf16-mf16.png Graphic file (type png)
+<use ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df16-p
+f16-mf16.png>
+Package pdftex.def Info: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4
+_s42_103_vf16-df16-pf16-mf16.png  used on input line 293.
+(pdftex.def)             Requested size: 131.45245pt x 81.78119pt.
+<../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vbf16-dbf16-pbf
+16-mbf16.png, id=237, 1076.3412pt x 669.702pt>
+File: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vbf16-dbf1
+6-pbf16-mbf16.png Graphic file (type png)
+<use ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vbf16-dbf16
+-pbf16-mbf16.png>
+Package pdftex.def Info: ../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4
+_s42_103_vbf16-dbf16-pbf16-mbf16.png  used on input line 293.
+(pdftex.def)             Requested size: 131.45245pt x 81.78119pt.
+
+[23
+
+ <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baseline.p
+ng> <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df16-p
+f16-mf16.png> <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_v
+bf16-dbf16-pbf16-mbf16.png>]
+<../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png, id=246, 1119.
+7032pt x 1108.6218pt>
+File: ../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png Graphic f
+ile (type png)
+<use ../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png>
+Package pdftex.def Info: ../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e
+4_s42.png  used on input line 305.
+(pdftex.def)             Requested size: 199.1693pt x 197.19196pt.
+<../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e4_s42.png, id=247, 1087.
+4226pt x 1023.3432pt>
+File: ../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e4_s42.png Graphic f
+ile (type png)
+<use ../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e4_s42.png>
+Package pdftex.def Info: ../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e
+4_s42.png  used on input line 305.
+(pdftex.def)             Requested size: 166.10963pt x 156.31985pt.
+ [24
+
+ <../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png> <../analysis
+/figures/batch2/probe_img_b2_S8mix1000_dr1e4_s42.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\translate ' on input line 269.
+(hyperref)                removing `\translate ' on input line 319.
 
-[20
+[25
 
-] [21
+] [26
 
 ]
-<../analysis/figures/panel_S0_point1_n101.png, id=218, 1076.3412pt x 667.293pt>
+<../analysis/figures/panel_S0_point1_n101.png, id=269, 1076.3412pt x 667.293pt>
 
 File: ../analysis/figures/panel_S0_point1_n101.png Graphic file (type png)
 <use ../analysis/figures/panel_S0_point1_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S0_point1_n101.png  used on 
-input line 277.
+input line 327.
 (pdftex.def)             Requested size: 310.50502pt x 192.49934pt.
- [22
+ [27
 
  <../analysis/figures/panel_S0_point1_n101.png>]
-<../analysis/figures/panel_S1_points_dr10_n101.png, id=225, 1076.3412pt x 667.7
+<../analysis/figures/panel_S1_points_dr10_n101.png, id=276, 1076.3412pt x 667.7
 748pt>
 File: ../analysis/figures/panel_S1_points_dr10_n101.png Graphic file (type png)
 
 <use ../analysis/figures/panel_S1_points_dr10_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S1_points_dr10_n101.png  use
-d on input line 280.
+d on input line 330.
 (pdftex.def)             Requested size: 310.27509pt x 192.49934pt.
- [23
+ [28
 
  <../analysis/figures/panel_S1_points_dr10_n101.png>]
-<../analysis/figures/panel_S2_mixed_dr100_n101.png, id=232, 1076.3412pt x 669.7
+<../analysis/figures/panel_S2_mixed_dr100_n101.png, id=283, 1076.3412pt x 669.7
 02pt>
 File: ../analysis/figures/panel_S2_mixed_dr100_n101.png Graphic file (type png)
 
 <use ../analysis/figures/panel_S2_mixed_dr100_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S2_mixed_dr100_n101.png  use
-d on input line 283.
+d on input line 333.
 (pdftex.def)             Requested size: 309.38821pt x 192.49934pt.
- [24
+ [29
 
  <../analysis/figures/panel_S2_mixed_dr100_n101.png>]
-<../analysis/figures/panel_S3_gauss_dr1000_n101.png, id=239, 1076.3412pt x 661.
+<../analysis/figures/panel_S3_gauss_dr1000_n101.png, id=290, 1076.3412pt x 661.
 9932pt>
 File: ../analysis/figures/panel_S3_gauss_dr1000_n101.png Graphic file (type png
 )
 <use ../analysis/figures/panel_S3_gauss_dr1000_n101.png>
 Package pdftex.def Info: ../analysis/figures/panel_S3_gauss_dr1000_n101.png  us
-ed on input line 286.
+ed on input line 336.
 (pdftex.def)             Requested size: 312.98499pt x 192.49934pt.
- [25
+ [30
 
  <../analysis/figures/panel_S3_gauss_dr1000_n101.png>]
-[26
+[31
 
-] (./tables/summary_all.tex) [27
+] (./tables/summary_all.tex)
 
-] (./tables/quant_s0.tex) [28
+Class beamer Warning: Frame text is shrunk by a factor of 18.29529 percent inst
+ead of 8 percent on input line 343.
 
-]
-(./tables/quant_s3.tex) [29
+[32
 
-] (./tables/quant_s1.tex) [30
+] (./tables/quant_s0.tex) [33
 
-]
-(./tables/quant_s2.tex) [31
-
-] (./tables/pilot_v3_S2_mixed_dr100.tex) [32
+] (./tables/quant_s3.tex) [34
 
 ]
-(./tables/pilot_v3_S5_points_dr1e6.tex) [33
+(./tables/quant_s1.tex) [35
+
+] (./tables/quant_s2.tex) [36
 
 ]
-(./tables/pilot_v3_S7_point_peak1e6.tex) [34
-
-] [35
+(./tables/pilot_v3_S2_mixed_dr100.tex) [37
 
 ]
-<../analysis/figures/stage_d.png, id=301, 931.3194pt x 322.806pt>
+(./tables/pilot_v3_S5_points_dr1e6.tex) [38
+
+]
+(./tables/pilot_v3_S7_point_peak1e6.tex) [39
+
+] [40
+
+]
+<../analysis/figures/stage_d.png, id=353, 931.3194pt x 322.806pt>
 File: ../analysis/figures/stage_d.png Graphic file (type png)
 <use ../analysis/figures/stage_d.png>
-Package pdftex.def Info: ../analysis/figures/stage_d.png  used on input line 33
+Package pdftex.def Info: ../analysis/figures/stage_d.png  used on input line 38
 4.
 (pdftex.def)             Requested size: 195.1881pt x 67.65334pt.
-<../analysis/figures/stage_p.png, id=302, 931.3194pt x 322.806pt>
+<../analysis/figures/stage_p.png, id=354, 931.3194pt x 322.806pt>
 File: ../analysis/figures/stage_p.png Graphic file (type png)
 <use ../analysis/figures/stage_p.png>
-Package pdftex.def Info: ../analysis/figures/stage_p.png  used on input line 33
+Package pdftex.def Info: ../analysis/figures/stage_p.png  used on input line 38
 4.
 (pdftex.def)             Requested size: 195.1881pt x 67.65334pt.
- [36
+ [41
 
  <../analysis/figures/stage_d.png> <../analysis/figures/stage_p.png>]
-<../analysis/figures/ladder_flux.png, id=310, 462.0462pt x 325.6968pt>
+<../analysis/figures/ladder_flux.png, id=362, 462.0462pt x 325.6968pt>
 File: ../analysis/figures/ladder_flux.png Graphic file (type png)
 <use ../analysis/figures/ladder_flux.png>
 Package pdftex.def Info: ../analysis/figures/ladder_flux.png  used on input lin
-e 345.
+e 395.
 (pdftex.def)             Requested size: 195.1881pt x 137.59184pt.
-<../analysis/figures/ladder_resmad.png, id=311, 450.9648pt x 325.215pt>
+<../analysis/figures/ladder_resmad.png, id=363, 450.9648pt x 325.215pt>
 File: ../analysis/figures/ladder_resmad.png Graphic file (type png)
 <use ../analysis/figures/ladder_resmad.png>
 Package pdftex.def Info: ../analysis/figures/ladder_resmad.png  used on input l
-ine 345.
+ine 395.
 (pdftex.def)             Requested size: 195.1881pt x 140.76273pt.
- [37
+ [42
 
  <../analysis/figures/ladder_flux.png> <../analysis/figures/ladder_resmad.png>]
- [38
+ [43
 
 ]
-<../analysis/figures/detail_S3_gauss_dr1000_all-f16.png, id=328, 642.7212pt x 8
+<../analysis/figures/detail_S3_gauss_dr1000_all-f16.png, id=379, 642.7212pt x 8
 52.3042pt>
 File: ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png Graphic file (type
  png)
 <use ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png>
 Package pdftex.def Info: ../analysis/figures/detail_S3_gauss_dr1000_all-f16.png
-  used on input line 352.
+  used on input line 402.
 (pdftex.def)             Requested size: 145.15523pt x 192.49934pt.
- [39
+ [44
 
  <../analysis/figures/detail_S3_gauss_dr1000_all-f16.png>]
-<../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png, id=335, 642.2394pt x 
+<../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png, id=386, 642.2394pt x 
 851.3406pt>
 File: ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png Graphic file (typ
 e png)
 <use ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png>
 Package pdftex.def Info: ../analysis/figures/detail_S3_gauss_dr1000_all-bf16.pn
-g  used on input line 356.
+g  used on input line 406.
 (pdftex.def)             Requested size: 145.21301pt x 192.49934pt.
- [40
+ [45
 
  <../analysis/figures/detail_S3_gauss_dr1000_all-bf16.png>]
-<../analysis/figures/detail_S5_points_dr1e6_schemes.png, id=342, 1227.6264pt x 
+<../analysis/figures/detail_S5_points_dr1e6_schemes.png, id=393, 1227.6264pt x 
 878.3214pt>
 File: ../analysis/figures/detail_S5_points_dr1e6_schemes.png Graphic file (type
  png)
 <use ../analysis/figures/detail_S5_points_dr1e6_schemes.png>
 Package pdftex.def Info: ../analysis/figures/detail_S5_points_dr1e6_schemes.png
-  used on input line 360.
+  used on input line 410.
 (pdftex.def)             Requested size: 262.49216pt x 187.80327pt.
- [41
+ [46
 
  <../analysis/figures/detail_S5_points_dr1e6_schemes.png>]
-<../analysis/figures/detail_S2_mixed_dr100_schemes.png, id=349, 1227.6264pt x 8
+<../analysis/figures/detail_S2_mixed_dr100_schemes.png, id=400, 1227.6264pt x 8
 78.3214pt>
 File: ../analysis/figures/detail_S2_mixed_dr100_schemes.png Graphic file (type 
 png)
 <use ../analysis/figures/detail_S2_mixed_dr100_schemes.png>
 Package pdftex.def Info: ../analysis/figures/detail_S2_mixed_dr100_schemes.png 
- used on input line 364.
+ used on input line 414.
 (pdftex.def)             Requested size: 262.49216pt x 187.80327pt.
- [42
+ [47
 
- <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [43
+ <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [48
 
 ]
-<../analysis/figures/probe_cmp_S2_mixed_dr100.png, id=364, 1119.7032pt x 924.57
+<../analysis/figures/probe_cmp_S2_mixed_dr100.png, id=414, 1119.7032pt x 924.57
 42pt>
 File: ../analysis/figures/probe_cmp_S2_mixed_dr100.png Graphic file (type png)
 <use ../analysis/figures/probe_cmp_S2_mixed_dr100.png>
 Package pdftex.def Info: ../analysis/figures/probe_cmp_S2_mixed_dr100.png  used
- on input line 371.
+ on input line 421.
 (pdftex.def)             Requested size: 227.43915pt x 187.80327pt.
- [44
+ [49
 
  <../analysis/figures/probe_cmp_S2_mixed_dr100.png>]
-<../analysis/figures/quant_residual_mad_S0_point1.png, id=371, 714.5094pt x 317
+<../analysis/figures/quant_residual_mad_S0_point1.png, id=422, 714.5094pt x 317
 .0244pt>
 File: ../analysis/figures/quant_residual_mad_S0_point1.png Graphic file (type p
 ng)
 <use ../analysis/figures/quant_residual_mad_S0_point1.png>
 Package pdftex.def Info: ../analysis/figures/quant_residual_mad_S0_point1.png  
-used on input line 381.
+used on input line 431.
 (pdftex.def)             Requested size: 195.1881pt x 86.6039pt.
-<../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png, id=372, 714.5094pt
+<../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png, id=423, 714.5094pt
  x 317.0244pt>
 File: ../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png Graphic file (
 type png)
 <use ../analysis/figures/quant_residual_mad_S3_gauss_dr1000.png>
 Package pdftex.def Info: ../analysis/figures/quant_residual_mad_S3_gauss_dr1000
-.png  used on input line 381.
+.png  used on input line 431.
 (pdftex.def)             Requested size: 195.1881pt x 86.6039pt.
- [45
+ [50
 
  <../analysis/figures/quant_residual_mad_S0_point1.png> <../analysis/figures/qu
 ant_residual_mad_S3_gauss_dr1000.png>]
-<../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png, id=380, 714.991
+<../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png, id=431, 714.991
 2pt x 463.0098pt>
 File: ../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png Graphic fil
 e (type png)
 <use ../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png>
 Package pdftex.def Info: ../analysis/figures/probe_S5_points_dr1e6_n101_f64_cur
-ves.png  used on input line 392.
+ves.png  used on input line 442.
 (pdftex.def)             Requested size: 195.1881pt x 126.39903pt.
-<../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png, id=381, 714.
+<../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png, id=432, 714.
 5094pt x 463.0098pt>
 File: ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png Graphic 
 file (type png)
 <use ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png>
 Package pdftex.def Info: ../analysis/figures/probe_S5_points_dr1e6_n101_allf16_
-curves.png  used on input line 392.
+curves.png  used on input line 442.
 (pdftex.def)             Requested size: 195.1881pt x 126.48381pt.
- [46
+ [51
 
  <../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png> <../analysis/f
-igures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [47
+igures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [52
 
 ]
-<../analysis/figures/panel_S7_point_peak1e6_n101_f64.png, id=396, 1076.3412pt x
+<../analysis/figures/panel_S7_point_peak1e6_n101_f64.png, id=447, 1076.3412pt x
  665.8476pt>
 File: ../analysis/figures/panel_S7_point_peak1e6_n101_f64.png Graphic file (typ
 e png)
 <use ../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>
 Package pdftex.def Info: ../analysis/figures/panel_S7_point_peak1e6_n101_f64.pn
-g  used on input line 399.
-(pdftex.def)             Requested size: 311.16196pt x 192.49934pt.
+g  used on input line 449.
+(pdftex.def)             Requested size: 295.98653pt x 183.10721pt.
 
-[48
+[53
 
  <../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>]
-<../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png, id=403, 1076.3412p
+<../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png, id=454, 1076.3412p
 t x 666.3294pt>
 File: ../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png Graphic file (
 type png)
 <use ../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png>
 Package pdftex.def Info: ../analysis/figures/panel_S7_point_peak1e6_n101_allf16
-.png  used on input line 403.
+.png  used on input line 453.
 (pdftex.def)             Requested size: 310.94846pt x 192.49934pt.
- [49
+ [54
 
  <../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png>]
-<../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png, id=411, 1076.3412pt
+<../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png, id=461, 1076.3412pt
  x 669.702pt>
 File: ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png Graphic file (t
 ype png)
 <use ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png>
 Package pdftex.def Info: ../analysis/figures/panel_S5_points_dr1e6_n101_allf16.
-png  used on input line 407.
+png  used on input line 457.
 (pdftex.def)             Requested size: 309.38821pt x 192.49934pt.
- [50
+ [55
 
  <../analysis/figures/panel_S5_points_dr1e6_n101_allf16.png>]
 \tf@nav=\write6
@@ -1526,31 +1645,34 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 46BDB5AE960BE15571DF5A1313941BEB;2874.
  ) 
 Here is how much of TeX's memory you used:
- 26007 strings out of 467525
- 526361 string characters out of 5418982
- 891810 words of memory out of 5000000
- 54240 multiletter control sequences out of 15000+600000
- 694590 words of font info for 122 fonts, out of 8000000 for 9000
+ 26099 strings out of 467525
+ 531729 string characters out of 5418982
+ 897810 words of memory out of 5000000
+ 54321 multiletter control sequences out of 15000+600000
+ 695807 words of font info for 123 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  128i,13n,123p,1915b,760s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb
-></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb><
-/usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></
-usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></us
-r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
-/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local
-/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/l
-ocal/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/loc
-al/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local
-/texlive/2026/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texliv
-e/2026/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/
-texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
-Output written on main.pdf (50 pages, 14215330 bytes).
+></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb>
+</usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></
+usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss10.pfb></u
+sr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss12.pfb></us
+r/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/
+local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/l
+ocal/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/loc
+al/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local
+/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/t
+exlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/tex
+live/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local
+/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfss1000.pfb></usr/local/t
+exlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/tex
+live/2026/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/20
+26/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/texm
+f-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
+Output written on main.pdf (55 pages, 20745346 bytes).
 PDF statistics:
- 509 PDF objects out of 1000 (max. 8388607)
- 357 compressed objects within 4 object streams
- 113 named destinations out of 1000 (max. 500000)
- 294 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 574 PDF objects out of 1000 (max. 8388607)
+ 389 compressed objects within 4 object streams
+ 123 named destinations out of 1000 (max. 500000)
+ 349 words of extra memory for PDF output out of 10000 (max. 10000000)
 

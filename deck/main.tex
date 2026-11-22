@@ -218,52 +218,102 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
   on S8 DR $10^4$; sky-seed spread s42/s43/s44.
 \item 6 schemes: f64, all-f16, all-bf16, model-f16, vis-f16, dirty-f16
   (f32 shown invisible, raw-cast shown NaN — both excluded).
-\item ~120 runs via \texttt{scripts/run\_experiments.sh} under named screen
-  sessions; every run carries probes (log2 hists + per-iteration image
-  snapshots).
-\item Details below appear as results land (guarded frames).
+\item 126 runs: one screen session per experiment (\texttt{run\_experiment.sh}),
+  python pool inside, \texttt{scripts/status.sh} to monitor; every run carries
+  probes (log2 hists + per-iteration image snapshots).
+\item Noise/seeds results are in (frames below); DR-ladder frames are guarded
+  and appear when exp\_dr lands.
 \end{itemize}
 \end{frame}
 
-\IfFileExists{../analysis/figures/batch2/sweep_sigma_ratio_residual_mad.png}{%
-\begin{frame}{Batch 2 — how noise changes the conclusions}
+\begin{frame}{Batch 2 — noise ladder on the complex field (exp\_noise: S8, 1000 src, DR $10^4$)}
 \begin{columns}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_sigma_ratio_residual_mad.png}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/noise_ratio_residual_mad.png}
 \end{column}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_sigma_resmad_over_noise.png}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/noise_resmad_over_noise.png}
+\end{column}
+\end{columns}
+\begin{itemize}\small
+\item All 16-bit schemes sit within $\pm 1\%$ of f64 on resMAD for every
+  $\sigma\in\{10^{-6},10^{-3},10^{-2}\}$ — quantization is invisible here.
+\item Right: resMAD$/(\sigma/\sqrt{N_{vis}})\propto 1/\sigma$ — the residual
+  is set by a CLEAN floor $\approx 6.5\cdot10^{-3}$ Jy/beam (sidelobe/emission
+  dominated), not by noise, down to $\sigma=10^{-6}$. Quantization error is far
+  below that floor.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Batch 2 — sky-seed variability vs quantization (exp\_seeds: S8 DR $10^4$, $\sigma=10^{-4}$, seeds s42/43/44)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/seeds_ratio_achieved_dr.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/seeds_ratio_residual_mad.png}
+\end{column}
+\end{columns}
+\begin{itemize}\small
+\item f64 itself varies by $\sim 2\times$ across sky seeds (resMAD
+  $3.6$–$6.5\cdot10^{-3}$, achDR $148$–$260$) — the sky realization dominates.
+\item All schemes within $\pm 0.8\%$ of the same-sky f64 (all-bf16 slightly
+  \emph{higher} achDR: quantization acts as a mild regularizer, fewer
+  components). Quantization signal is $\sim 100\times$ below seed variability.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Batch 2 — CLEAN iteration curves (S8 DR $10^4$, noise seed 103)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png}
+\end{column}
+\end{columns}
+\begin{itemize}\small
+\item All schemes overlap exactly at every major cycle: the loop stalls at
+  $k=10$ (max\_major) with residual still decreasing — achieved DR
+  $\approx 150$–$260 \ll$ field DR $10^4$. The stall, not arithmetic, sets the
+  metric on this field.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Batch 2 — images: f64 vs all-f16 vs all-bf16 (S8 DR $10^4$, s42, n103)}
+\begin{columns}
+\begin{column}{0.33\textwidth}\includegraphics[width=\textwidth]{../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baseline.png}\end{column}
+\begin{column}{0.33\textwidth}\includegraphics[width=\textwidth]{../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df16-pf16-mf16.png}\end{column}
+\begin{column}{0.33\textwidth}\includegraphics[width=\textwidth]{../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vbf16-dbf16-pbf16-mbf16.png}\end{column}
+\end{columns}
+\begin{itemize}\small
+\item truth | dirty | PSF / model | restored | residual per scheme — panels are
+  visually identical; residual is structured sidelobes at $\sim10^{-2}$ Jy/beam.
+\end{itemize}
+\end{frame}
+
+\IfFileExists{../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png}{%
+\begin{frame}{Batch 2 — per-iteration log2 range probes by scheme (S8 DR $10^4$)}
+\begin{columns}
+\begin{column}{0.50\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/probe_cmp_b2_S8mix1000_dr1e4_s42.png}
+\end{column}
+\begin{column}{0.42\textwidth}
+\includegraphics[height=0.68\textheight]{../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e4_s42.png}
 \end{column}
 \end{columns}
 \end{frame}}{}
 
-\IfFileExists{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_residual_mad.png}{%
-\begin{frame}{Batch 2 — metric vs field DR (S8, 1000 sources)}
+\IfFileExists{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_residual_mad.png}{%
+\begin{frame}{Batch 2 — metric vs field DR (exp\_dr, S8 1000 src, $\sigma=10^{-4}$, seeds 101/102)}
 \begin{columns}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_residual_mad.png}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_residual_mad.png}
 \end{column}
 \begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_dr_b2_S8mix1000_dr1e4_ratio_achieved_dr.png}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_achieved_dr.png}
 \end{column}
 \end{columns}
-\end{frame}}{}
-
-\IfFileExists{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_peak.png}{%
-\begin{frame}{Batch 2 — metric vs CLEAN iteration (S8 DR $10^4$)}
-\begin{columns}
-\begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_peak.png}
-\end{column}
-\begin{column}{0.49\textwidth}
-\includegraphics[width=\textwidth]{../analysis/figures/batch2/sweep_k_b2_S8mix1000_dr1e4_s42_res_mad.png}
-\end{column}
-\end{columns}
-\end{frame}}{}
-
-\IfFileExists{../analysis/figures/probe_img_b2_S8mix1000_dr1e4_s42.png}{%
-\begin{frame}{Batch 2 — per-iteration model/residual snapshots by scheme (S8 DR $10^4$)}
-\includegraphics[height=0.82\textheight]{../analysis/figures/probe_img_b2_S8mix1000_dr1e4_s42.png}
 \end{frame}}{}
 
 \appendix
@@ -395,7 +445,7 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 
 \IfFileExists{../analysis/figures/panel_S7_point_peak1e6_n101_f64.png}{%
 \begin{frame}{F — S7 f64 panel}
-\includegraphics[height=0.82\textheight]{../analysis/figures/panel_S7_point_peak1e6_n101_f64.png}
+\includegraphics[height=0.78\textheight]{../analysis/figures/panel_S7_point_peak1e6_n101_f64.png}
 \end{frame}}{}
 \IfFileExists{../analysis/figures/panel_S7_point_peak1e6_n101_allf16.png}{%
 \begin{frame}{F — S7 all-f16 panel}

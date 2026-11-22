@@ -300,46 +300,64 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 211.
 
-[18] [19]
+[18] [19] [20 <../analysis/figures/batch2/noise_ratio_residual_mad.png> <../ana
+lysis/figures/batch2/noise_resmad_over_noise.png>] [21 <../analysis/figures/bat
+ch2/seeds_ratio_achieved_dr.png> <../analysis/figures/batch2/seeds_ratio_residu
+al_mad.png>] [22 <../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_peak.
+png> <../analysis/figures/batch2/k_b2_S8mix1000_dr1e4_s42_res_mad.png>]
+[23 <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_f64-baselin
+e.png> <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_103_vf16-df1
+6-pf16-mf16.png> <../analysis/figures/batch2/panel_b2_b2_S8mix1000_dr1e4_s42_10
+3_vbf16-dbf16-pbf16-mbf16.png>] [24 <../analysis/figures/batch2/probe_cmp_b2_S8
+mix1000_dr1e4_s42.png> <../analysis/figures/batch2/probe_img_b2_S8mix1000_dr1e4
+_s42.png>]
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\translate ' on input line 269.
+(hyperref)                removing `\translate ' on input line 319.
 
-[20] [21] [22 <../analysis/figures/panel_S0_point1_n101.png>] [23 <../analysis/
-figures/panel_S1_points_dr10_n101.png>] [24 <../analysis/figures/panel_S2_mixed
-_dr100_n101.png>] [25 <../analysis/figures/panel_S3_gauss_dr1000_n101.png>]
-[26] (./tables/summary_all.tex) [27] (./tables/quant_s0.tex) [28]
-(./tables/quant_s3.tex) [29] (./tables/quant_s1.tex) [30]
-(./tables/quant_s2.tex) [31] (./tables/pilot_v3_S2_mixed_dr100.tex) [32]
-(./tables/pilot_v3_S5_points_dr1e6.tex) [33]
-(./tables/pilot_v3_S7_point_peak1e6.tex) [34] [35] [36 <../analysis/figures/sta
-ge_d.png> <../analysis/figures/stage_p.png>] [37 <../analysis/figures/ladder_fl
-ux.png> <../analysis/figures/ladder_resmad.png>] [38] [39 <../analysis/figures/
-detail_S3_gauss_dr1000_all-f16.png>] [40 <../analysis/figures/detail_S3_gauss_d
-r1000_all-bf16.png>] [41 <../analysis/figures/detail_S5_points_dr1e6_schemes.pn
-g>] [42 <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [43] [44 <../a
-nalysis/figures/probe_cmp_S2_mixed_dr100.png>] [45 <../analysis/figures/quant_r
+[25] [26] [27 <../analysis/figures/panel_S0_point1_n101.png>] [28 <../analysis/
+figures/panel_S1_points_dr10_n101.png>] [29 <../analysis/figures/panel_S2_mixed
+_dr100_n101.png>] [30 <../analysis/figures/panel_S3_gauss_dr1000_n101.png>]
+[31] (./tables/summary_all.tex)
+
+Class beamer Warning: Frame text is shrunk by a factor of 18.29529 percent inst
+ead of 8 percent on input line 343.
+
+[32] (./tables/quant_s0.tex) [33] (./tables/quant_s3.tex) [34]
+(./tables/quant_s1.tex) [35] (./tables/quant_s2.tex) [36]
+(./tables/pilot_v3_S2_mixed_dr100.tex) [37]
+(./tables/pilot_v3_S5_points_dr1e6.tex) [38]
+(./tables/pilot_v3_S7_point_peak1e6.tex) [39] [40] [41 <../analysis/figures/sta
+ge_d.png> <../analysis/figures/stage_p.png>] [42 <../analysis/figures/ladder_fl
+ux.png> <../analysis/figures/ladder_resmad.png>] [43] [44 <../analysis/figures/
+detail_S3_gauss_dr1000_all-f16.png>] [45 <../analysis/figures/detail_S3_gauss_d
+r1000_all-bf16.png>] [46 <../analysis/figures/detail_S5_points_dr1e6_schemes.pn
+g>] [47 <../analysis/figures/detail_S2_mixed_dr100_schemes.png>] [48] [49 <../a
+nalysis/figures/probe_cmp_S2_mixed_dr100.png>] [50 <../analysis/figures/quant_r
 esidual_mad_S0_point1.png> <../analysis/figures/quant_residual_mad_S3_gauss_dr1
-000.png>] [46 <../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png> <
-../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [47]
-[48 <../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>] [49 <../analysis
-/figures/panel_S7_point_peak1e6_n101_allf16.png>] [50 <../analysis/figures/pane
+000.png>] [51 <../analysis/figures/probe_S5_points_dr1e6_n101_f64_curves.png> <
+../analysis/figures/probe_S5_points_dr1e6_n101_allf16_curves.png>] [52]
+[53 <../analysis/figures/panel_S7_point_peak1e6_n101_f64.png>] [54 <../analysis
+/figures/panel_S7_point_peak1e6_n101_allf16.png>] [55 <../analysis/figures/pane
 l_S5_points_dr1e6_n101_allf16.png>] (./main.aux) )</usr/local/texlive/2026/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf
--dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/font
-s/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/
-type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2026/texmf-dist/fo
-nts/type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2026/texmf-dist/font
-s/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/
-type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/u
-rw/helvetic/uhvr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/helv
-etic/uhvro8a.pfb>
-Output written on main.pdf (50 pages, 14215330 bytes).
+-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2026/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2026/texmf-di
+st/fonts/type1/public/amsfonts/cm/cmss10.pfb></usr/local/texlive/2026/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmss12.pfb></usr/local/texlive/2026/texmf-dist
+/fonts/type1/public/amsfonts/cm/cmss9.pfb></usr/local/texlive/2026/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmsy6.pfb></usr/local/texlive/2026/texmf-dist/font
+s/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2026/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2026/texmf-dist/fonts/type
+1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2026/texmf-dist/fonts/
+type1/public/cm-super/sfss1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/ty
+pe1/public/cm-super/sftt1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type
+1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/h
+elvetic/uhvr8a.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/urw/helvetic
+/uhvro8a.pfb>
+Output written on main.pdf (55 pages, 20745346 bytes).
 Transcript written on main.log.
 Latexmk: Getting log file 'main.log'
 Latexmk: Examining 'main.fls'
