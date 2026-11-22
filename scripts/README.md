@@ -28,13 +28,21 @@ Canonical OSKAR re-simulation (optional, singularity mandatory — set in env.sh
 Batch 2 (DR x noise x seeds sweeps) — one python process per experiment:
 
 ```bash
-bash run_experiment.sh --dry        # preview (screen sessions + plan sizes)
+bash run_experiment.sh --dry        # preview: one launch line per experiment
 bash run_experiment.sh              # launch b2_exp_dr b2_exp_noise b2_exp_seeds + b2_wait
-MAX_SCREENS=1 MAXJOBS=8 NTHREADS=4 bash run_experiment.sh   # serialize sessions if needed
-screen -r b2_exp_dr                 # live per-run output of one experiment
+MAX_SCREENS=1 MAXJOBS=8 NTHREADS=4 bash run_experiment.sh   # cap concurrent sessions if needed
+
+# monitoring — one command:
+bash scripts/status.sh              # screen sessions + progress table + last runs (summary.csv)
+screen -r b2_exp_dr                 # live per-run output of one experiment (banner + start/done lines)
 screen -r b2_wait                   # live table (total/done/running/failed per exp)
-tail -f results/batch2/logs/exp_dr_*.log
+tail -f results/batch2/logs/exp_dr_*.log   # session log (tee'd by run_batch --log-file)
 ```
+
+Launch mechanics: `scripts/launch_one.sh <exp>` is the single place a session is
+spawned — `screen -dmS b2_<exp> python -u experiments/run_batch.py ... --log-file <log>`
+(nohup fallback when screen is missing). `run_experiments.sh` just feeds the exp
+list through `xargs -P $MAX_SCREENS` and then starts `b2_wait`.
 
 - `experiments/run_batch.py` is the single source of truth: sky specs (SKIES),
   quantization schemes (SCHEMES), and per-experiment plans (PLANS:

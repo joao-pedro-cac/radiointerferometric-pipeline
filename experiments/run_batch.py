@@ -136,6 +136,7 @@ def run_one(job, nthreads, log_dir, progress, lock):
     with lock:
         progress["running"].append(name)
         _atomic_write_json(Path(job["run"]).parent / "progress.json", progress)
+    print(f"[{job['exp']}] start {name}  (log {log_path.name})", flush=True)
     with open(log_path, "w") as lf:
         rc = subprocess.run(cmd, stdout=lf, stderr=subprocess.STDOUT, env=env).returncode
     wall = time.time() - t0
@@ -176,6 +177,18 @@ def write_summary(exp_root, jobs, progress):
     return out
 
 
+class _Tee:
+    """Write to several streams, flushing each — keeps session logs live."""
+    def __init__(self, *streams):
+        self.streams = streams
+    def write(self, s):
+        for st in self.streams:
+            st.write(s); st.flush()
+    def flush(self):
+        for st in self.streams:
+            st.flush()
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -187,7 +200,13 @@ def main(argv=None):
     ap.add_argument("--nthreads", type=int, default=int(os.environ.get("NTHREADS", "4")))
     ap.add_argument("--dataset-root", default=None)
     ap.add_argument("--batch-root", default=None)
+    ap.add_argument("--log-file", default=None,
+                    help="tee stdout to this file (session log); launchers pass -u python too")
     args = ap.parse_args(argv)
+
+    if args.log_file:
+        lf = open(args.log_file, "a")
+        sys.stdout = _Tee(sys.__stdout__, lf)
 
     if args.list_exps:
         print(" ".join(PLANS)); return 0
@@ -207,14 +226,21 @@ def main(argv=None):
         missing = [j for j in jobs if not (Path(j["dataset"]) / "obs.npz").exists()]
         if missing:
             print(f"[{exp}] missing datasets: {sorted({Path(j['dataset']).name for j in missing})}"
-                  f" — run simulate_data.sh first", file=sys.stderr)
+                  f" — run simulate_data.sh first", file=sys.stderr, flush=True)
             return 1
         todo = [j for j in jobs if not j["done"]]
-        print(f"[{exp}] root={exp_root}  jobs={len(jobs)}  already done={len(jobs)-len(todo)}  to run={len(todo)}"
-              f"  maxjobs={args.maxjobs} nthreads={args.nthreads}")
+        # banner first — the session log must show life immediately, not after
+        # the first ~100 s CLEAN run completes
+        print(f"[{exp}] run_batch starting {ts}  python={sys.executable}", flush=True)
+        print(f"[{exp}] exp_root={exp_root}", flush=True)
+        print(f"[{exp}] dataset_root={dataset_root}  jobs={len(jobs)}  "
+              f"already done={len(jobs)-len(todo)}  to run={len(todo)}  "
+              f"maxjobs={args.maxjobs} nthreads={args.nthreads}  (maxjobs*nthreads={args.maxjobs*args.nthreads} threads)",
+              flush=True)
         if args.dry:
             for j in todo:
-                print(f"  DRY {j['run_name']}  dataset={Path(j['dataset']).name}  {' '.join(scheme_args(j['scheme']))}")
+                print(f"  DRY {j['run_name']}  dataset={Path(j['dataset']).name}  {' '.join(scheme_args(j['scheme']))}",
+                      flush=True)
             continue
         progress = dict(exp=exp, ts=ts, total=len(jobs), done=[j["run_name"] for j in jobs if j["done"]],
                         running=[], failed=[], walls={}, metrics={},

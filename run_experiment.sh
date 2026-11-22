@@ -17,6 +17,7 @@
 #   screen -r b2_exp_dr                     # live output of one experiment
 #   screen -r b2_wait                       # live table of all experiments
 #   tail -f results/batch2/logs/exp_dr_*.log
+#   bash scripts/status.sh                 # one-glance: sessions + progress + last results
 #
 # Tunables via environment (see scripts/env.sh.example):
 #   MAX_SCREENS cap on concurrent screen sessions   (default: unlimited)

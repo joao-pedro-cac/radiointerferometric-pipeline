@@ -115,3 +115,18 @@ def test_wait_batch_collect_and_render(tmp_path):
     assert not all_done and "exp_dr_20261122_120000" in table
     rc = wait_batch.main(["--root", str(tmp_path), "--once"])
     assert rc == 2  # not complete
+
+
+def test_log_file_tee_writes_banner(tmp_path):
+    dataset_root = tmp_path / "ds"
+    for prefix in run_batch.PLANS["exp_seeds"][0]:
+        d = dataset_root / f"{prefix}_n103"
+        d.mkdir(parents=True); (d / "obs.npz").write_bytes(b"x")
+    log = tmp_path / "session.log"
+    rc = run_batch.main(["--exp", "exp_seeds", "--dry",
+                         "--dataset-root", str(dataset_root),
+                         "--batch-root", str(tmp_path / "batch"),
+                         "--log-file", str(log)])
+    assert rc == 0
+    txt = log.read_text()
+    assert "run_batch starting" in txt and "to run=18" in txt and "DRY" in txt
