@@ -231,6 +231,20 @@ def residual_peak_vs_k(df, outdir, skies=None, max_skies=10):
     return out
 
 
+def sweep_box(df, outdir):
+    """Monte Carlo box plots: for each exp3_* experiment, ratio metrics as box
+    plots per scheme (x=scheme, hue=sky) — real seed distributions."""
+    sub = df[df.exp.str.startswith("exp3")]
+    if sub.empty:
+        return
+    for y, lab, logy, ref in PLOTS:
+        if y not in sub.columns or not sub[y].notna().any():
+            continue
+        P.metric_boxplots(sub, "scheme", y, "sky", f"box_{y}.png",
+                          xlabel="scheme", ylabel=lab, logy=logy, ref_line=ref,
+                          title=f"batch 3 MC: {lab} by scheme (boxes over sky x noise seeds)")
+
+
 def report_tables(df):
     import pandas as pd
     pd.set_option("display.width", 200)
@@ -263,6 +277,16 @@ def report_tables(df):
                   f64_resMAD=("residual_mad", "mean"), f64_achDR=("achieved_dr", "mean"))
              .round(4))
         print(g.to_string())
+    print("\n== exp3 (batch 3): mean±std over seeds per scheme")
+    e3 = df[df.exp.str.startswith("exp3")]
+    if not e3.empty:
+        g = (e3.groupby(["exp", "scheme"])
+             .agg(n=("run", "count"), resMAD_r=("ratio_residual_mad", "mean"),
+                  resMAD_s=("ratio_residual_mad", "std"), achDR_r=("ratio_achieved_dr", "mean"),
+                  achDR_s=("ratio_achieved_dr", "std"), ncomp_r=("ratio_n_components", "mean"),
+                  dcc=("d_cross_correlation", "mean"), comparable=("comparable", "sum"))
+             .round(4))
+        print(g.to_string())
     print("\n== f64 baseline variability across sky seeds (exp_seeds):")
     if not seeds.empty:
         f = seeds[seeds.scheme == "f64-baseline"]
@@ -291,6 +315,7 @@ def main():
     sweep_noise(df, P.OUTPUT_DIR)
     sweep_seeds(df, P.OUTPUT_DIR)
     sweep_dr(df, P.OUTPUT_DIR)
+    sweep_box(df, P.OUTPUT_DIR)
     probe_k(df, P.OUTPUT_DIR, args.ref_sky)
     skies = None
     if args.skies:

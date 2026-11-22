@@ -57,6 +57,19 @@ list through `xargs -P $MAX_SCREENS` and then starts `b2_wait`.
 - `experiments/wait_batch.py --root results/batch2 [--once]` is the wait/monitor
   (used by the b2_wait session; `--once` exits 2 while incomplete, 0 when done).
 
+Batch 3 (Monte Carlo + range limit + noise-floor fields) — plans live in
+`experiments/run_batch.py` (`exp3_mc`, `exp3_range`, `exp3_floor`, 52 runs):
+
+```bash
+# datasets: only batch-3 skies, with the batch-3 noise seeds
+EXPS="exp3_mc exp3_range exp3_floor" NOISE_SEEDS="201 202 301 401" bash simulate_data.sh
+# runs: one screen session per experiment
+bash run_experiment.sh exp3_mc exp3_range exp3_floor
+bash scripts/status.sh
+```
+
+`--print-skies --exps ...` filters which skies `simulate_data.sh` builds.
+
 Then pull `results/` back and regenerate the render locally:
 
 ```bash

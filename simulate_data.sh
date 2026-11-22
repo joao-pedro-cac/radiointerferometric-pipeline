@@ -43,8 +43,9 @@ MAXJOBS="${MAXJOBS:-1}"
 NOISE_SEEDS="${NOISE_SEEDS:-101}"
 
 # name:n_point:n_gauss:n_diffuse:dr:peak_flux:sigma:sky_seed   (space-separated)
-# Default: the batch-2 plan's sky specs, single source of truth in run_batch.py
-SKIES="${SKIES:-$("$PY" "$HERE/experiments/run_batch.py" --print-skies)}"
+# Default: the plan sky specs, single source of truth in run_batch.py.
+# EXPS="exp3_mc exp3_range exp3_floor" restricts to those plans' skies (batch 3).
+SKIES="${SKIES:-$("$PY" "$HERE/experiments/run_batch.py" --print-skies ${EXPS:+--exps $EXPS})}"
 
 DRY=0
 [ "${1:-}" = "--dry" ] && DRY=1

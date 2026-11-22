@@ -44,11 +44,24 @@ SKIES = [
     "b2_S8mix1000_dr1e4_s42_sig1e-2:700:250:50:1e4:1.0:1e-2:42",
     "b2_S8mix1000_dr1e4_s42_sig1e-3:700:250:50:1e4:1.0:1e-3:42",
     "b2_S8mix1000_dr1e4_s42_sig1e-6:700:250:50:1e4:1.0:1e-6:42",
+    # batch 3 — Monte Carlo on the field with a batch-2 quantization signal
+    "b3_s6gauss_dr1e5_s51:0:12:0:1e5:1.0:1e-4:51",
+    "b3_s6gauss_dr1e5_s52:0:12:0:1e5:1.0:1e-4:52",
+    "b3_s6gauss_dr1e5_s53:0:12:0:1e5:1.0:1e-4:53",
+    # batch 3 — peak-flux range limit (where the f16 range bites)
+    "b3_point_peak1e5:1:0:0:1:1e5:1e-4:71",
+    "b3_point_peak1e6:1:0:0:1:1e6:1e-4:71",
+    # batch 3 — deep-noise fields that reach the noise floor
+    "b3_points_dr10_s81:8:0:0:10:1.0:1e-4:81",
+    "b3_points_dr10_s81_sig1e-6:8:0:0:10:1.0:1e-6:81",
+    "b3_gauss_dr1e3_s81:0:12:0:1e3:1.0:1e-4:81",
+    "b3_gauss_dr1e3_s81_sig1e-6:0:12:0:1e3:1.0:1e-6:81",
 ]
 
 # name -> (q_vis, q_dirty, q_psf, q_model, rescale_max)
 SCHEMES = {
     "f64":      ("float64",  "float64",  "float64",  "float64",  65503),
+    "allf32":   ("float32",  "float32",  "float32",  "float32",  65503),
     "allf16":   ("float16",  "float16",  "float16",  "float16",  65503),
     "allbf16":  ("bfloat16", "bfloat16", "bfloat16", "bfloat16", 65503),
     "modelf16": ("float64",  "float64",  "float64",  "float16",  65503),
@@ -56,14 +69,29 @@ SCHEMES = {
     "dirtyf16": ("float64",  "float16",  "float64",  "float64",  65503),
 }
 
-# exp name -> (sky-name prefixes, noise seeds)
+# batch-2 scheme set is pinned (allf32 only enters via batch-3 plans)
+B2_SCHEMES = ["f64", "allf16", "allbf16", "modelf16", "visf16", "dirtyf16"]
+
+# exp name -> (sky-name prefixes, noise seeds, schemes or None = all)
 PLANS = {
     "exp_dr": (["b2_S6_gauss_dr1e5_s42"] + [f"b2_S8mix1000_dr1e{d}_s42" for d in (2, 3, 4, 5, 6)],
-               ["101", "102"]),
+               ["101", "102"], B2_SCHEMES),
     "exp_noise": (["b2_S8mix1000_dr1e4_s42_sig1e-2", "b2_S8mix1000_dr1e4_s42_sig1e-3",
-                   "b2_S8mix1000_dr1e4_s42_sig1e-6"], ["101", "102"]),
+                   "b2_S8mix1000_dr1e4_s42_sig1e-6"], ["101", "102"], B2_SCHEMES),
     "exp_seeds": (["b2_S8mix1000_dr1e4_s42", "b2_S8mix1000_dr1e4_s43",
-                   "b2_S8mix1000_dr1e4_s44"], ["103"]),
+                   "b2_S8mix1000_dr1e4_s44"], ["103"], B2_SCHEMES),
+    # batch 3 — Monte Carlo (sky seed x noise seed) on the S6 field that showed
+    # the all-bf16 signal; box plots over seeds in the report
+    "exp3_mc": (["b3_s6gauss_dr1e5_s51", "b3_s6gauss_dr1e5_s52", "b3_s6gauss_dr1e5_s53"],
+                ["201", "202"], ["f64", "allf16", "allbf16", "modelf16"]),
+    # batch 3 — peak-flux range limit: where f16 range (ulp at pinned 65503) bites
+    "exp3_range": (["b3_point_peak1e5", "b3_point_peak1e6"],
+                   ["301"], ["f64", "allf16", "allbf16", "modelf16"]),
+    # batch 3 — deep noise / low DR: fields that reach the noise floor;
+    # f32 visibility + f16/bf16 floor vs k
+    "exp3_floor": (["b3_points_dr10_s81", "b3_points_dr10_s81_sig1e-6",
+                    "b3_gauss_dr1e3_s81", "b3_gauss_dr1e3_s81_sig1e-6"],
+                   ["401"], ["f64", "allf32", "allf16", "allbf16", "modelf16"]),
 }
 
 CLEAN_DEFAULTS = dict(gamma="0.1", pf="1e-4", maxiter="10000", loop_max="10")
@@ -85,8 +113,8 @@ def scheme_args(name):
 
 def build_jobs(exp, dataset_root, exp_root, schemes=None):
     """Plan -> job dicts. Pure (no I/O except existence checks for resume)."""
-    prefixes, seeds = PLANS[exp]
-    schemes = list(schemes or SCHEMES)
+    prefixes, seeds, plan_schemes = PLANS[exp]
+    schemes = list(schemes or plan_schemes or SCHEMES)
     jobs = []
     for prefix in prefixes:
         for nseed in seeds:
@@ -192,9 +220,11 @@ class _Tee:
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--exp", choices=list(PLANS) + ["all"], default="all")
+    ap.add_argument("--exp", nargs="+", choices=list(PLANS) + ["all"], default=["all"])
     ap.add_argument("--list-exps", action="store_true")
     ap.add_argument("--print-skies", action="store_true")
+    ap.add_argument("--exps", nargs="*", default=None,
+                    help="with --print-skies: only skies of these plans")
     ap.add_argument("--dry", action="store_true", help="print the plan, run nothing")
     ap.add_argument("--maxjobs", type=int, default=int(os.environ.get("MAXJOBS", "8")))
     ap.add_argument("--nthreads", type=int, default=int(os.environ.get("NTHREADS", "4")))
@@ -211,12 +241,17 @@ def main(argv=None):
     if args.list_exps:
         print(" ".join(PLANS)); return 0
     if args.print_skies:
-        print(" ".join(SKIES)); return 0
+        if args.exps:
+            wanted = {p for e in args.exps for p in PLANS[e][0]}
+            print(" ".join(s for s in SKIES if spec_name(s) in wanted))
+        else:
+            print(" ".join(SKIES))
+        return 0
 
     dataset_root, batch_root = _default_roots()
     dataset_root = args.dataset_root or dataset_root
     batch_root = args.batch_root or batch_root
-    exps = list(PLANS) if args.exp == "all" else [args.exp]
+    exps = list(PLANS) if args.exp == ["all"] else args.exp
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     for exp in exps:

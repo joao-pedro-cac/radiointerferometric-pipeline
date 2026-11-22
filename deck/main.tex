@@ -339,6 +339,35 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \end{itemize}
 \end{frame}}{}
 
+\section{Batch 3 — Monte Carlo, range limit, noise-floor fields}
+
+\begin{frame}{Batch 3 — design}
+\begin{itemize}
+\item \texttt{exp3\_mc}: S6 gaussians DR $10^5$ (the field with the batch-2
+  all-bf16 signal), 3 sky seeds x 2 noise seeds x {f64, all-f16, all-bf16,
+  model-f16} = 24 runs -> box plots over seeds.
+\item \texttt{exp3\_range}: single point source at peak $10^5$ / $10^6$ Jy —
+  where the f16 range (ulp 32 at pinned 65503) bites; res-peak-vs-$k$ shows the
+  divergence point.
+\item \texttt{exp3\_floor}: low-DR point/gaussian fields at $\sigma=10^{-4}$ and
+  $10^{-6}$ — runs that reach the noise floor (comparability-audited), incl.
+  all-f32 to test f32 visibility.
+\item 52 runs total; plans in \texttt{experiments/run\_batch.py}; remote flow:
+  \texttt{EXPS="exp3\_mc exp3\_range exp3\_floor" NOISE\_SEEDS="201 202 301 401"
+  bash simulate\_data.sh} then \texttt{bash run\_experiment.sh exp3\_mc exp3\_range exp3\_floor}.
+\end{itemize}
+\end{frame}
+
+\IfFileExists{../analysis/figures/batch2/box_ratio_residual_mad.png}{%
+\begin{frame}{Batch 3 — Monte Carlo box plots (resMAD/f64 by scheme)}
+\includegraphics[width=0.85\textwidth]{../analysis/figures/batch2/box_ratio_residual_mad.png}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/concl/respeak_k_b3_point_peak1e6_res_peak.png}{%
+\begin{frame}{Batch 3 — range limit: res-peak vs $k$, peak $10^6$ Jy}
+\includegraphics[width=0.8\textwidth]{../analysis/figures/concl/respeak_k_b3_point_peak1e6_res_peak.png}
+\end{frame}}{}
+
 \section{Conclusions — what 16-bit quantization can and cannot do}
 
 \begin{frame}{Residual peak vs iteration — simple fields that reach the noise floor}

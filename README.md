@@ -31,6 +31,9 @@ bash simulate_data.sh                 # build datasets (SIM_MODE=ducc0 fast | os
 bash run_experiment.sh                # screen sessions b2_<exp> (python pool per exp) + b2_wait monitor
 bash run_experiment.sh --dry          # show what would launch
 bash run_experiment.sh --dry          # show what would launch
+# batch 3 (Monte Carlo / range limit / noise-floor fields):
+#   EXPS="exp3_mc exp3_range exp3_floor" NOISE_SEEDS="201 202 301 401" bash simulate_data.sh
+#   bash run_experiment.sh exp3_mc exp3_range exp3_floor
 ```
 
 Optional overrides go in `scripts/env.sh` (copy `scripts/env.sh.example`):

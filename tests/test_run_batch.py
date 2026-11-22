@@ -55,14 +55,14 @@ def test_build_jobs_counts_and_names(tmp_path):
     exp_root = tmp_path / "out"
     jobs = run_batch.build_jobs("exp_dr", dataset_root, exp_root)
     # 6 skies x 2 noise seeds x 6 schemes
-    assert len(jobs) == 6 * 2 * len(run_batch.SCHEMES)
+    assert len(jobs) == 6 * 2 * len(run_batch.B2_SCHEMES)
     assert jobs[0]["run_name"].startswith("b2_S6_gauss_dr1e5_s42_n101_")
     assert jobs[0]["dataset"].endswith("b2_S6_gauss_dr1e5_s42_n101")
     assert all(not j["done"] for j in jobs)
     jobs_n = run_batch.build_jobs("exp_noise", dataset_root, exp_root)
-    assert len(jobs_n) == 3 * 2 * len(run_batch.SCHEMES)
+    assert len(jobs_n) == 3 * 2 * len(run_batch.B2_SCHEMES)
     jobs_s = run_batch.build_jobs("exp_seeds", dataset_root, exp_root)
-    assert len(jobs_s) == 3 * 1 * len(run_batch.SCHEMES)
+    assert len(jobs_s) == 3 * 1 * len(run_batch.B2_SCHEMES)
     assert {j["run_name"].split("_n")[1].split("_")[0] for j in jobs_s} == {"103"}
 
 
@@ -78,7 +78,7 @@ def test_build_jobs_resume_skip(tmp_path):
 
 def test_dry_run_prints_plan_and_runs_nothing(tmp_path, capsys):
     dataset_root = tmp_path / "ds"
-    for prefixes, seeds in run_batch.PLANS.values():
+    for prefixes, seeds, _schemes in run_batch.PLANS.values():
         for prefix in prefixes:
             for nseed in seeds + ["101", "102", "103"]:
                 d = dataset_root / run_batch.dataset_name(prefix, nseed)
@@ -130,3 +130,46 @@ def test_log_file_tee_writes_banner(tmp_path):
     assert rc == 0
     txt = log.read_text()
     assert "run_batch starting" in txt and "to run=18" in txt and "DRY" in txt
+
+
+def test_batch3_plans_counts_and_schemes(tmp_path):
+    dataset_root = tmp_path / "ds"; exp_root = tmp_path / "out"
+    # exp3_mc: 3 sky seeds x 2 noise seeds x 4 schemes
+    assert len(run_batch.build_jobs("exp3_mc", dataset_root, exp_root)) == 3 * 2 * 4
+    # exp3_range: 2 peak-flux skies x 1 noise seed x 4 schemes
+    assert len(run_batch.build_jobs("exp3_range", dataset_root, exp_root)) == 2 * 1 * 4
+    # exp3_floor: 4 skies (2 fields x 2 sigma) x 1 seed x 5 schemes (incl. allf32)
+    jobs = run_batch.build_jobs("exp3_floor", dataset_root, exp_root)
+    assert len(jobs) == 4 * 1 * 5
+    assert {j["scheme"] for j in jobs} == {"f64", "allf32", "allf16", "allbf16", "modelf16"}
+    # allf32 maps to float32 on every stage
+    a = run_batch.scheme_args("allf32")
+    assert all(x == "float32" for x in a[1:8:2])
+    # batch-2 plans unchanged (all schemes)
+    assert len(run_batch.build_jobs("exp_seeds", dataset_root, exp_root)) == 18
+
+
+def test_print_skies_exps_filter():
+    import subprocess, sys
+    out = subprocess.run([sys.executable, str(CODE_ROOT / "experiments" / "run_batch.py"),
+                          "--print-skies", "--exps", "exp3_range"],
+                         capture_output=True, text=True)
+    assert out.returncode == 0
+    names = [run_batch.spec_name(s) for s in out.stdout.split()]
+    assert names == ["b3_point_peak1e5", "b3_point_peak1e6"]
+
+
+def test_dry_run_multi_exp(tmp_path, capsys):
+    dataset_root = tmp_path / "ds"
+    for prefixes, seeds, _ in run_batch.PLANS.values():
+        for prefix in prefixes:
+            for nseed in seeds + ["201", "202", "301", "401"]:
+                d = dataset_root / run_batch.dataset_name(prefix, nseed)
+                d.mkdir(parents=True, exist_ok=True); (d / "obs.npz").write_bytes(b"x")
+    rc = run_batch.main(["--exp", "exp3_range", "exp3_floor", "--dry",
+                         "--dataset-root", str(dataset_root),
+                         "--batch-root", str(tmp_path / "batch")])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "[exp3_range]" in out and "to run=8" in out
+    assert "[exp3_floor]" in out and "to run=20" in out
