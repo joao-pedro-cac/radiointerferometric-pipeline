@@ -316,6 +316,56 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \end{columns}
 \end{frame}}{}
 
+\section{Conclusions — what 16-bit quantization can and cannot do}
+
+\begin{frame}{Residual peak vs iteration — simple fields that reach the noise floor}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/concl/respeak_k_S7_point_peak1e6_res_peak.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/concl/respeak_k_S5_points_dr1e6_res_peak.png}
+\end{column}
+\end{columns}
+\begin{itemize}\small
+\item f64 descends to the noise floor (red, $\sigma/\sqrt{N_{vis}}$) by $k\approx7$;
+  all-f16 / all-bf16 / model-f16 diverge at $k\approx2$–3 and stall at their
+  quantization floor — this is the hard limit of 16-bit arithmetic, not of CLEAN.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Comparability audit — the stall illusion}
+\begin{itemize}
+\item A run is \emph{comparable} only if its residual reached the noise floor
+  (resMAD $\lesssim 3\,\sigma/\sqrt{N_{vis}}$); otherwise the metric is set by the
+  CLEAN floor and any scheme looks "safe" (illusion).
+\item Batch-2 S8 runs (1000 src, DR $10^4$): \emph{all} 54 runs are floor-dominated
+  (floor ratio $\sim10^4$–$10^5$) and stalled at $k=10$ → not comparable; their
+  "quantization is invisible" result is a floor effect, not a precision result.
+\item Quantization claims therefore rest on noise-floor-reaching fields
+  (S2/S5/S7-style): there, model-f16 is the dominant term, f16 range limits
+  achDR at high peak flux, vis/dirty/PSF stages are safe.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Batch 3 — design (Monte Carlo + noise-floor fields)}
+\begin{itemize}
+\item Fields chosen to \emph{reach the noise floor} (comparability-audited per
+  run), simple and complex; per-field res-peak-vs-$k$ curves with the
+  $\sigma/\sqrt{N}$ line mark exactly where f16/bf16/f32 leave the f64 track.
+\item Monte Carlo seed sets (sky + noise) on the significant configurations;
+  curves rendered as \emph{box plots} (\texttt{plot.metric\_boxplots}) so
+  uncertainty bars are real distributions, not $\pm$std.
+\item Every reported number carries its comparability flag; stalled/floor-dominated
+  runs are excluded from quantization-effect claims and listed separately.
+\end{itemize}
+\end{frame}
+
+\IfFileExists{../analysis/figures/concl/box_ratio_residual_mad.png}{%
+\begin{frame}{Batch 3 — Monte Carlo box plots (guarded)}
+\includegraphics[width=0.8\textwidth]{../analysis/figures/concl/box_ratio_residual_mad.png}
+\end{frame}}{}
+
 \appendix
 
 \section*{Appendix}

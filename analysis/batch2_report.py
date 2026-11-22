@@ -31,7 +31,7 @@ def scan(root):
     """One row per run dir (params.json + metrics.json only — no npz)."""
     import pandas as pd
     rows = []
-    for mj in sorted(Path(root).glob("exp_*/**/metrics.json")):
+    for mj in sorted(Path(root).glob("**/metrics.json")):
         d = mj.parent
         pj = d / "params.json"
         if not pj.exists():
@@ -41,7 +41,7 @@ def scan(root):
         row = dict(p)
         row.update(m)
         row["run"] = d.name
-        row["exp"] = d.parent.name.split("_2026")[0]
+        row["exp"] = d.relative_to(root).parts[0].split("_2026")[0]
         row["run_dir"] = str(d)
         rows.append(row)
     df = pd.DataFrame(rows)
@@ -55,7 +55,11 @@ def scan(root):
 
 def add_ratios(df):
     df = df.copy()
-    ref = df[df.scheme == "f64-baseline"].set_index(["sky", "noise_seed"])
+    # one f64 reference row per (sky, noise_seed): drop duplicates so ref.loc[key]
+    # is always a Series even when several studies contain the same sky
+    ref = (df[df.scheme == "f64-baseline"]
+           .drop_duplicates(subset=["sky", "noise_seed"])
+           .set_index(["sky", "noise_seed"]).sort_index())
     for col in ("residual_mad", "achieved_dr", "n_components", "residual_rms"):
         df[f"ratio_{col}"] = np.nan
     for col in ("cross_correlation", "flux_conservation", "snr_db"):
@@ -164,9 +168,78 @@ def panels(df, outdir, ref_sky="b2_S8mix1000_dr1e4_s42", max_runs=12):
         z.close()
 
 
+# resMAD within this factor of sigma/sqrt(Nvis) counts as "noise floor reached"
+NOISE_FLOOR_FACTOR = 3.0
+
+
+def comparability(df):
+    """Flag runs whose metrics are trustworthy for quantization comparisons.
+
+    A run is `comparable` when its residual actually reached the noise floor
+    (resMAD ~ sigma/sqrt(Nvis)) — there, quantization error would show if it
+    mattered. Stall / max_major runs on complex fields sit on a CLEAN floor
+    (resMAD >> sigma/sqrt(Nvis)): their metrics look quantization-safe but are
+    floor-dominated — the "illusion of safe quantization".
+    """
+    df = df.copy()
+    df["noise_floor_ratio"] = df["resmad_over_noise"]
+    df["reached_noise_floor"] = df["noise_floor_ratio"] < NOISE_FLOOR_FACTOR
+    df["stalled"] = df["converged_reason"].isin(["stall", "max_major"])
+    df["comparable"] = (df["reached_noise_floor"] & df["ratio_residual_mad"].notna()
+                        & np.isfinite(df["residual_mad"]))
+    return df
+
+
+def residual_peak_vs_k(df, outdir, skies=None, max_skies=10):
+    """res_peak (and res_mad) vs major cycle k per scheme, one figure per sky,
+    with the noise floor sigma/sqrt(Nvis) as a red dashed line. This is where
+    f16/bf16/f32 divergence from f64 becomes visible on fields that reach the
+    noise floor."""
+    import pandas as pd
+    out = []
+    skies = skies or sorted(df["sky"].unique())
+    for sky in skies:
+        sub = df[df.sky == sky]
+        if sub.empty:
+            continue
+        rows = []
+        for _, r in sub.iterrows():
+            pz = Path(r["run_dir"]) / "probes.npz"
+            if not pz.exists():
+                continue
+            pc = ProbeCollector.from_arrays(dict(np.load(pz)))
+            for s in pc.snaps:
+                if s["label"].startswith("k") and "res_peak" in s["scalars"]:
+                    rows.append(dict(scheme=r["scheme"], k=s["scalars"]["k"],
+                                     res_peak=s["scalars"]["res_peak"],
+                                     res_mad=s["scalars"]["res_mad"]))
+        if not rows:
+            continue
+        pdf = pd.DataFrame(rows)
+        floor = float(sub["sigma_jy"].iloc[0]) / np.sqrt(float(sub["nvis"].iloc[0]))
+        for y, lab in [("res_peak", "residual peak (Jy/beam)"),
+                       ("res_mad", "residual MAD (Jy/beam)")]:
+            P.metric_vs_axis(pdf, "k", y, "scheme", f"respeak_k_{sky}_{y}.png",
+                             xlabel="major cycle k", ylabel=lab, logx=False,
+                             logy=True, ref_line=floor,
+                             title=f"{sky}: {lab} vs k (red = noise floor σ/√N)")
+        out.append(sky)
+        if len(out) >= max_skies:
+            break
+    return out
+
+
 def report_tables(df):
     import pandas as pd
     pd.set_option("display.width", 200)
+    print("\n== comparability audit (runs whose residual reached the noise floor = comparable)")
+    comp = comparability(df)
+    g = (comp.groupby(["exp", "scheme"])
+         .agg(n=("run", "count"), comparable=("comparable", "sum"),
+              stalled=("stalled", "sum"),
+              floor_ratio_med=("noise_floor_ratio", "median"))
+         .round(2))
+    print(g.to_string())
     noise = df[df.exp.str.startswith("exp_noise")]
     seeds = df[df.exp.str.startswith("exp_seeds")]
     print("\n== exp_noise: mean±std over noise seeds (101,102), per scheme x σ")
@@ -201,6 +274,8 @@ def main():
     ap.add_argument("roots", nargs="+", default=[str(CODE_ROOT / "results" / "batch2")])
     ap.add_argument("--out", default=str(CODE_ROOT / "analysis" / "figures" / "batch2"))
     ap.add_argument("--ref-sky", default="b2_S8mix1000_dr1e4_s42")
+    ap.add_argument("--skies", nargs="*", default=None,
+                    help="substring filter for the per-sky residual-peak-vs-k figures")
     args = ap.parse_args()
     P.SAVE_FIGURES = True
     P.OUTPUT_DIR = Path(args.out)
@@ -208,12 +283,19 @@ def main():
     import pandas as pd
     dfs = [scan(r) for r in args.roots]
     df = add_ratios(pd.concat(dfs, ignore_index=True))
+    df = comparability(df)
     print(f"{len(df)} runs: {sorted(df.exp.unique())}")
     df.to_csv(P.OUTPUT_DIR / "batch2_metrics.csv", index=False)
     sweep_noise(df, P.OUTPUT_DIR)
     sweep_seeds(df, P.OUTPUT_DIR)
     sweep_dr(df, P.OUTPUT_DIR)
     probe_k(df, P.OUTPUT_DIR, args.ref_sky)
+    skies = None
+    if args.skies:
+        skies = [s for s in sorted(df.sky.unique())
+                 if any(f in s for f in args.skies)]
+    did = residual_peak_vs_k(df, P.OUTPUT_DIR, skies=skies)
+    print("residual-peak-vs-k figures for skies:", did)
     panels(df, P.OUTPUT_DIR, args.ref_sky)
     report_tables(df)
 

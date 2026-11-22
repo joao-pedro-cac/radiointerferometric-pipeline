@@ -211,6 +211,42 @@ def metric_vs_axis(df, x, y, hue, name, xlabel="", ylabel="", logx=True,
     return _save(fig, name)
 
 
+def metric_boxplots(df, x, y, hue, name, xlabel="", ylabel="", logx=False,
+                    logy=False, title="", ref_line=None):
+    """Box plots of `y` per category `x`, one box per `hue` — for Monte Carlo
+    seed sets (many runs per cell); whiskers = 1.5 IQR, outliers hidden."""
+    from matplotlib.patches import Patch
+    fig, ax = plt.subplots(figsize=(9, 5))
+    xs = sorted(df[x].dropna().unique())
+    hues = list(dict.fromkeys(df[hue].astype(str)))
+    w = 0.8 / max(len(hues), 1)
+    for i, h in enumerate(hues):
+        data = [df[(df[x] == xv) & (df[hue].astype(str) == h)][y].dropna().to_numpy()
+                for xv in xs]
+        pos = [j + i * w for j in range(len(xs))]
+        bp = ax.boxplot(data, positions=pos, widths=w * 0.9, patch_artist=True,
+                        showfliers=False, manage_ticks=False)
+        for patch in bp["boxes"]:
+            patch.set(facecolor=f"C{i}", alpha=0.65)
+    ax.set_xticks(range(len(xs)))
+    ax.set_xticklabels([str(xv) for xv in xs], rotation=20, ha="right", fontsize=8)
+    if logx:
+        ax.set_xscale("log")
+    if logy:
+        ax.set_yscale("log")
+    if ref_line is not None:
+        ax.axhline(ref_line, color="red", lw=1, ls="--")
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, fontsize=10)
+    ax.grid(alpha=0.3, axis="y")
+    ax.legend(handles=[Patch(facecolor=f"C{i}", alpha=0.65, label=h)
+                       for i, h in enumerate(hues)], fontsize=8)
+    fig.tight_layout()
+    return _save(fig, name)
+
+
 def metric_bars(df, metric, ylabel, name, hue="quantization.model"):
     """Grouped bars: mean +/- std of `metric` per dataset (and hue if present)."""
     fig, ax = plt.subplots(figsize=(9, 5))
