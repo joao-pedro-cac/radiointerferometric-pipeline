@@ -185,7 +185,8 @@ def test_pipeline_raw_cast_overflow_survives_and_is_probed():
     # stage 1: the fixture itself must exceed the f16 range (65504)
     assert np.abs(vis).max() > 65504.0, f"fixture |vis|max={np.abs(vis).max()}"
     # stage 2: raw cast (rescale_max=None -> scale 1.0) must overflow to inf
-    q, s = quantize.quantize_visibilities(vis, "float16", rescale_max=None)
+    with np.errstate(over="ignore"):
+        q, s = quantize.quantize_visibilities(vis, "float16", rescale_max=None)
     assert s == 1.0 and not np.isfinite(q).all()
     # stage 3: the pipeline survives and the probes recorded the overflow
     with np.errstate(over="ignore", invalid="ignore"):
