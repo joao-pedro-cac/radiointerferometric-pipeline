@@ -114,7 +114,9 @@ def sweep_dr(df, outdir):
     """Metric vs field DR per sky family (needs >=2 DR values — lights up when
     exp_dr lands)."""
     df = df.copy()
-    df["fam"] = df["sky"].str.replace(r"_s[0-9]+$", "", regex=True)
+    # family = sky name without the trailing _s<seed> and the _dr<value> token
+    df["fam"] = (df["sky"].str.replace(r"_s[0-9]+$", "", regex=True)
+                 .str.replace(r"_dr[0-9.e]+$", "", regex=True))
     for fam, sub in df.groupby("fam"):
         if sub["field_dr"].nunique() < 2:
             continue

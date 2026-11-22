@@ -305,7 +305,7 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \end{frame}}{}
 
 \IfFileExists{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_residual_mad.png}{%
-\begin{frame}{Batch 2 — metric vs field DR (exp\_dr, S8 1000 src, $\sigma=10^{-4}$, seeds 101/102)}
+\begin{frame}{Batch 2 — metric vs field DR, complex field (exp\_dr: S8 1000 src, $\sigma=10^{-4}$, seeds 101/102)}
 \begin{columns}
 \begin{column}{0.49\textwidth}
 \includegraphics[width=\textwidth]{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_residual_mad.png}
@@ -314,6 +314,29 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \includegraphics[width=\textwidth]{../analysis/figures/batch2/dr_b2_S8mix1000_ratio_achieved_dr.png}
 \end{column}
 \end{columns}
+\begin{itemize}\small
+\item All schemes within $\pm1.5\%$ of f64 across DR $10^2\to10^6$: on the
+  1000-source field, achDR is stall-limited ($\approx46$–$347$, all runs
+  floor-dominated) — field DR does not change the quantization verdict here.
+\end{itemize}
+\end{frame}}{}
+
+\IfFileExists{../analysis/figures/batch2/panel_b2_b2_S6_gauss_dr1e5_s42_101_vbf16-dbf16-pbf16-mbf16.png}{%
+\begin{frame}{Batch 2 — the field that deconvolves: S6 gaussians DR $10^5$ (f64 vs all-bf16)}
+\begin{columns}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/panel_b2_b2_S6_gauss_dr1e5_s42_101_f64-baseline.png}
+\end{column}
+\begin{column}{0.49\textwidth}
+\includegraphics[width=\textwidth]{../analysis/figures/batch2/panel_b2_b2_S6_gauss_dr1e5_s42_101_vbf16-dbf16-pbf16-mbf16.png}
+\end{column}
+\end{columns}
+\begin{itemize}\small
+\item f64 reaches achDR $\approx1.2\cdot10^5 \approx$ field DR. all-bf16:
+  resMAD $\times1.8$, achDR $\times0.56$, components $\times0.67$ (bf16 ulp at the
+  rescaled peak is $8\times$ coarser than f16). all-f16 / vis-f16 / dirty-f16 /
+  model-f16 stay at $\approx1.00$ — stage-specific, not global.
+\end{itemize}
 \end{frame}}{}
 
 \section{Conclusions — what 16-bit quantization can and cannot do}
@@ -339,9 +362,11 @@ CLEAN loop $\xrightarrow{q_{model}}$ model \qquad PSF $\xrightarrow{q_{psf}}$
 \item A run is \emph{comparable} only if its residual reached the noise floor
   (resMAD $\lesssim 3\,\sigma/\sqrt{N_{vis}}$); otherwise the metric is set by the
   CLEAN floor and any scheme looks "safe" (illusion).
-\item Batch-2 S8 runs (1000 src, DR $10^4$): \emph{all} 54 runs are floor-dominated
-  (floor ratio $\sim10^4$–$10^5$) and stalled at $k=10$ → not comparable; their
-  "quantization is invisible" result is a floor effect, not a precision result.
+\item Batch-2 S8 runs (1000 src, DR ladder + noise + seeds: 126 runs): \emph{all}
+  are floor-dominated (floor ratio $\sim10^4$–$10^5$) and stalled → not comparable;
+  their "quantization is invisible" result is a floor effect, not a precision
+  result. Closest field: S6 gaussians (floor ratio $\approx55$), where all-bf16
+  degrades achDR $\times0.56$ — the only batch-2 quantization signal.
 \item Quantization claims therefore rest on noise-floor-reaching fields
   (S2/S5/S7-style): there, model-f16 is the dominant term, f16 range limits
   achDR at high peak flux, vis/dirty/PSF stages are safe.

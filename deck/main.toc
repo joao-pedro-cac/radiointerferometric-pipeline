@@ -2,10 +2,10 @@
 \beamer@sectionintoc {2}{Quantization pilot — 16 schemes on S0–S3}{7}{0}{2}
 \beamer@sectionintoc {3}{v3 sweep pilot — range stress and per-iteration probes}{11}{0}{3}
 \beamer@sectionintoc {4}{Batch 2 — sweeps: noise $\times $ DR $\times $ seeds (remote)}{18}{0}{4}
-\beamer@sectionintoc {5}{Conclusions — what 16-bit quantization can and cannot do}{25}{0}{5}
-\beamer@sectionintoc {7}{Appendix A — baseline images (6-panel per sky)}{30}{1}{6}
-\beamer@sectionintoc {8}{Appendix B — result tables}{35}{1}{7}
-\beamer@sectionintoc {9}{Appendix C — per-stage and ladder detail}{44}{1}{8}
-\beamer@sectionintoc {10}{Appendix D — low-precision detail images}{47}{1}{9}
-\beamer@sectionintoc {11}{Appendix E — probe detail and metric bars}{52}{1}{10}
-\beamer@sectionintoc {12}{Appendix F — v3 image panels (gallery has all runs)}{56}{1}{11}
+\beamer@sectionintoc {5}{Conclusions — what 16-bit quantization can and cannot do}{27}{0}{5}
+\beamer@sectionintoc {7}{Appendix A — baseline images (6-panel per sky)}{32}{1}{6}
+\beamer@sectionintoc {8}{Appendix B — result tables}{37}{1}{7}
+\beamer@sectionintoc {9}{Appendix C — per-stage and ladder detail}{46}{1}{8}
+\beamer@sectionintoc {10}{Appendix D — low-precision detail images}{49}{1}{9}
+\beamer@sectionintoc {11}{Appendix E — probe detail and metric bars}{54}{1}{10}
+\beamer@sectionintoc {12}{Appendix F — v3 image panels (gallery has all runs)}{58}{1}{11}
