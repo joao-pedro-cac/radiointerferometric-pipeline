@@ -4,13 +4,15 @@
 #
 # Pipeline position:  bash setup_env.sh  ->  bash simulate_data.sh  ->  bash run_experiment.sh
 #
+# Run from the repo root (works on both the local <archive>/code/ tree and the
+# flattened remote tree — paths are auto-detected by scripts/paths.sh):
+#   bash setup_env.sh && bash simulate_data.sh && bash run_experiment.sh
+#
 # Configuration is via environment variables (export them before calling, or
 # copy scripts/env.sh.example to scripts/env.sh and edit):
-#
-#   STAGE_ROOT      archive root (default: parent of code/)
-#   VENV_PATH       venv created by setup_env.sh (default /tmp/joao-venv)
-#   DATASET_PATH    output root for datasets (default $STAGE_ROOT/data/simulated/v2)
-#   UVCOV           harvested uv-coverage npz (default $STAGE_ROOT/data/uvcov/meerkat_1h_4ch_1p4ghz.npz)
+#   VENV_PATH       venv created by setup_env.sh (default: <repo>/venv, in-tree)
+#   DATASET_PATH    output root for datasets (default <stage>/data/simulated/v2)
+#   UVCOV           harvested uv-coverage npz (default <stage>/data/uvcov/meerkat_1h_4ch_1p4ghz.npz)
 #   SIM_MODE        "ducc0" (fast, default) or "oskar" (canonical OSKAR simulation)
 #   SKIES           space-separated sky specs "name:np:ng:nd:dr:peak:sigma:skyseed"
 #   NOISE_SEEDS     space-separated visibility-noise seeds (dataset suffix _n<seed>)
@@ -30,18 +32,12 @@
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"          # = CODE_ROOT in both trees
 [ -f "$HERE/scripts/env.sh" ] && source "$HERE/scripts/env.sh"
+source "$HERE/scripts/paths.sh"
 
-STAGE_ROOT="${STAGE_ROOT:-$(cd "$HERE/.." && pwd)}"
-VENV_PATH="${VENV_PATH:-/tmp/joao-venv}"
-PY="$VENV_PATH/bin/python"
-DATASET_PATH="${DATASET_PATH:-$STAGE_ROOT/data/simulated/v2}"
-UVCOV="${UVCOV:-$STAGE_ROOT/data/uvcov/meerkat_1h_4ch_1p4ghz.npz}"
 SIM_MODE="${SIM_MODE:-ducc0}"
 SINGULARITY="${SINGULARITY:-singularity}"
-OSKAR_SIF="${OSKAR_SIF:-$STAGE_ROOT/lib/OSKAR-2.12.2-Python3.sif}"
-TELESCOPE_DIR="${TELESCOPE_DIR:-$STAGE_ROOT/data/oskar/telescopes}"
 TELESCOPE="${TELESCOPE:-meerkat.tm}"
 MAXJOBS="${MAXJOBS:-1}"
 NOISE_SEEDS="${NOISE_SEEDS:-101}"

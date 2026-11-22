@@ -11,13 +11,10 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODE_ROOT="$(dirname "$HERE")"
 [ -f "$HERE/env.sh" ] && source "$HERE/env.sh"
-STAGE_ROOT="${STAGE_ROOT:-$(cd "$CODE_ROOT/.." && pwd)}"
-VENV_PATH="${VENV_PATH:-/tmp/joao-venv}"
-PY="$VENV_PATH/bin/python"
-DATASET_ROOT="${DATASET_PATH:-$STAGE_ROOT/data/simulated/v2}"
-UVCOV="${UVCOV:-$STAGE_ROOT/data/uvcov/meerkat_1h_4ch_1p4ghz.npz}"
+source "$HERE/paths.sh"
+DATASET_ROOT="$DATASET_PATH"
+UVCOV="$UVCOV"
 NOISE_SEEDS="${NOISE_SEEDS:-101}"
 
 # name:n_point:n_gauss:n_diffuse:dr:peak_flux:sigma:seed   (space-separated)

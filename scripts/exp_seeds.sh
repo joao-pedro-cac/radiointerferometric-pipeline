@@ -5,9 +5,8 @@
 # Runs land in results/batch2/exp_seeds_<ts>/
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODE_ROOT="$(dirname "$HERE")"
 [ -f "$HERE/env.sh" ] && source "$HERE/env.sh"
-STAGE_ROOT="${STAGE_ROOT:-$(cd "$CODE_ROOT/.." && pwd)}"
+source "$HERE/paths.sh"
 source "$HERE/batch2_common.sh"
 
 SPECS="b2_S8mix1000_dr1e4_s42:700:250:50:1e4:1.0:1e-4:42 b2_S8mix1000_dr1e4_s43:700:250:50:1e4:1.0:1e-4:43 b2_S8mix1000_dr1e4_s44:700:250:50:1e4:1.0:1e-4:44"

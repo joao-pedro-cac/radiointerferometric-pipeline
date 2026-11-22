@@ -20,19 +20,26 @@ attic/        legacy v1 code/configs/scripts (git history also has everything)
 
 ## Quickstart — three commands (local or remote server)
 
+Run from the repo root. The same commands work on the local tree
+(`<archive>/code/`, shared `data/`+`lib/` one level up) and on the flattened
+remote tree (everything at the repo root): `scripts/paths.sh` auto-detects
+`CODE_ROOT`/`STAGE_ROOT`, and the venv is in-tree by default (`./venv`).
+
 ```bash
-cd code/
-bash setup_env.sh /path/to/venv       # uv-based env (falls back to python3 -m venv); runs pytest gate
-export VENV_PATH=/path/to/venv        # or: cp scripts/env.sh.example scripts/env.sh and edit
+bash setup_env.sh                     # uv-based env -> ./venv (python3-venv fallback); runs pytest gate
 bash simulate_data.sh                 # build datasets (SIM_MODE=ducc0 fast | oskar via singularity)
 bash run_experiment.sh                # launch batch-2 experiments in screen sessions b2_<exp>
 bash run_experiment.sh --dry          # show what would launch
 ```
 
+Optional overrides go in `scripts/env.sh` (copy `scripts/env.sh.example`):
+`VENV_PATH`, `DATASET_PATH`, `RESULTS_PATH`, `NOISE_SEEDS`, `MAXJOBS`, and for
+the OSKAR route `SIM_MODE=oskar` + `SINGULARITY`/`OSKAR_SIF`/`TELESCOPE_DIR`.
+
 Equivalent manual route (single dataset + single CLEAN run):
 
 ```bash
-source scripts/env.sh                 # from env.sh.example; sets STAGE_ROOT, VENV_PATH, ...
+source scripts/paths.sh               # path detection + defaults (VENV_PATH, DATASET_PATH, UVCOV, ...)
 $VENV_PATH/bin/python -m pytest tests/ -q          # gate: must pass
 bash simulate_data.sh --dry           # see the dataset list (SKIES x NOISE_SEEDS)
 $VENV_PATH/bin/python experiments/make_dataset.py --name S0_n101 --n-point 1 --n-gauss 0 \

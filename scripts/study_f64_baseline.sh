@@ -5,14 +5,11 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODE_ROOT="$(dirname "$HERE")"
 # shellcheck source=scripts/env.sh
 [ -f "$HERE/env.sh" ] && source "$HERE/env.sh"
-STAGE_ROOT="${STAGE_ROOT:-$(cd "$CODE_ROOT/.." && pwd)}"
-VENV_PATH="${VENV_PATH:-/tmp/joao-venv}"
-PY="$VENV_PATH/bin/python"
-DATASET_ROOT="${DATASET_PATH:-$STAGE_ROOT/data/simulated/v2}"
-RESULTS="${RESULTS_PATH:-$CODE_ROOT/results}"
+source "$HERE/paths.sh"
+DATASET_ROOT="$DATASET_PATH"
+RESULTS="$RESULTS_PATH"
 STUDY="f64_baseline_$(date +%Y%m%d_%H%M%S)"
 OUT="$RESULTS/$STUDY"
 MAXJOBS="${MAXJOBS:-4}"

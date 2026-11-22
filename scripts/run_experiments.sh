@@ -8,10 +8,9 @@
 #   tail -f code/results/batch2/logs/exp_dr.log     # follow a log
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CODE_ROOT="$(dirname "$HERE")"
 [ -f "$HERE/env.sh" ] && source "$HERE/env.sh"
-STAGE_ROOT="${STAGE_ROOT:-$(cd "$CODE_ROOT/.." && pwd)}"
-RESULTS="${RESULTS_PATH:-$CODE_ROOT/results}"
+source "$HERE/paths.sh"
+RESULTS="$RESULTS_PATH"
 
 DRY=0
 EXPS=()

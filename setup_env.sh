@@ -2,16 +2,20 @@
 # Create the v2 pipeline environment with uv (uv assumed installed; falls back
 # to python3 -m venv when uv is absent, e.g. the local macOS box).
 #
-#   bash setup_env.sh /path/to/venv        # then: export VENV_PATH=/path/to/venv
+#   bash setup_env.sh            # creates ./venv in the repo tree (in-tree)
+#   bash setup_env.sh /path/to/venv
 #
-# Env vars: PYTHON_VERSION (default 3.11 — pfb-imaging requires >=3.10),
-#           PFB_DIR (default: code/lib/pfb-imaging if present, else <root>/lib/pfb-imaging)
+# Works from both trees (local <archive>/code/ and the flattened remote repo
+# root): paths are auto-detected via scripts/paths.sh.
+# Env vars: PYTHON_VERSION (default 3.11 — pfb-imaging requires >=3.10);
+#           overrides in scripts/env.sh (see env.sh.example).
 # Requires: uv (https://docs.astral.sh/uv/) or python3 >= 3.9.
 set -euo pipefail
-VENV="${1:-venv}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"          # = CODE_ROOT in both trees
+[ -f "$HERE/scripts/env.sh" ] && source "$HERE/scripts/env.sh"
+source "$HERE/scripts/paths.sh"
+VENV="${1:-$VENV_PATH}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.11}"
-ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if command -v uv >/dev/null 2>&1; then
   echo "== uv $(uv --version) — creating $VENV (python $PYTHON_VERSION)"
@@ -25,13 +29,11 @@ else
 fi
 
 # pinned scientific stack (numpy 1.26.4: numpy 2.x breaks dask-ms 0.2.x)
-$PIP -r "$HERE/requirements-v2.txt"
+$PIP -r "$CODE_ROOT/requirements-v2.txt"
 # dask-ms without deps (python-casacore needs system casacore libs) and
 # pfb-imaging from the pinned clone (skip its pyproject deps/jax).
 # Use the venv's own pip for these two: uv has no --ignore-requires-python.
 "$VENV/bin/pip" install --no-deps "dask-ms==0.2.21"
-PFB_DIR="${PFB_DIR:-$HERE/lib/pfb-imaging}"
-[ -d "$PFB_DIR" ] || PFB_DIR="$ROOT/lib/pfb-imaging"
 "$VENV/bin/pip" install --no-deps --ignore-requires-python -e "$PFB_DIR"
 
 # record the exact build in the log — version drift is the first thing to
@@ -48,7 +50,6 @@ for m in ("numpy", "numba", "llvmlite", "ducc0", "astropy", "dask", "xarray",
         print(f"  {m} MISSING: {type(e).__name__}: {e}")
 EOF
 
-"$VENV/bin/python" -m pytest "$HERE/tests/" -q || echo "WARNING: test gate failed — inspect before running experiments"
-echo "Environment ready at $VENV"
-echo "Next: export VENV_PATH=$VENV STAGE_ROOT=$ROOT"
-echo "      bash simulate_data.sh && bash run_experiment.sh"
+"$VENV/bin/python" -m pytest "$CODE_ROOT/tests/" -q || echo "WARNING: test gate failed — inspect before running experiments"
+echo "Environment ready at $VENV (VENV_PATH=$VENV_PATH)"
+echo "Next (from this directory): bash simulate_data.sh && bash run_experiment.sh"
