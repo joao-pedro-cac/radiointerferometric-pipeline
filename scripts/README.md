@@ -15,9 +15,9 @@ On the server (flattened tree), from the repo root:
 bash setup_env.sh                 # creates ./venv with uv (python3-venv fallback), runs pytest gate
 bash simulate_data.sh             # build datasets (SIM_MODE=ducc0 default)
 bash run_experiment.sh --dry      # preview
-bash run_experiment.sh            # batch 2 in screen sessions b2_<exp>
-screen -ls                        # sessions
-tail -f results/batch2/logs/exp_dr.log
+bash run_experiment.sh            # batch 2: one nohup'd python process per experiment
+bash scripts/status.sh            # pids + progress + last results
+tail -f results/batch2/logs/exp_dr_*.log
 ```
 
 Canonical OSKAR re-simulation (optional, singularity mandatory — set in env.sh):
@@ -29,20 +29,17 @@ Batch 2 (DR x noise x seeds sweeps) — one python process per experiment:
 
 ```bash
 bash run_experiment.sh --dry        # preview: one launch line per experiment
-bash run_experiment.sh              # launch b2_exp_dr b2_exp_noise b2_exp_seeds + b2_wait
-MAX_SCREENS=1 MAXJOBS=8 NTHREADS=4 bash run_experiment.sh   # cap concurrent sessions if needed
+bash run_experiment.sh              # launch one nohup'd process per experiment + wait monitor
+MAXPROCS=1 MAXJOBS=8 NTHREADS=4 bash run_experiment.sh   # cap concurrent processes if needed
 
 # monitoring — one command:
-bash scripts/status.sh              # screen sessions + progress table + last runs (summary.csv)
-screen -r b2_exp_dr                 # live per-run output of one experiment (banner + start/done lines)
-screen -r b2_wait                   # live table (total/done/running/failed per exp)
+bash scripts/status.sh              # pids (alive/EXITED) + last log line + progress + results
 tail -f results/batch2/logs/exp_dr_*.log   # session log (tee'd by run_batch --log-file)
 ```
 
 Launch mechanics: `scripts/launch_one.sh <exp>` is the single place a session is
-spawned — `screen -dmS b2_<exp> python -u experiments/run_batch.py ... --log-file <log>`
-(nohup fallback when screen is missing). `run_experiments.sh` just feeds the exp
-list through `xargs -P $MAX_SCREENS` and then starts `b2_wait`.
+spawned — `nohup python -u experiments/run_batch.py --exp <exp> ... > logs/<exp>_<ts>.log 2>&1 &`
+with a pid file and a 1-second fail-fast check (alive + banner in log).
 
 - `experiments/run_batch.py` is the single source of truth: sky specs (SKIES),
   quantization schemes (SCHEMES), and per-experiment plans (PLANS:
@@ -55,7 +52,8 @@ list through `xargs -P $MAX_SCREENS` and then starts `b2_wait`.
 - Per-run logs: `<exp_root>/logs/<run>.log`; live progress:
   `<exp_root>/progress.json`; final table: `<exp_root>/summary.csv`.
 - `experiments/wait_batch.py --root results/batch2 [--once]` is the wait/monitor
-  (used by the b2_wait session; `--once` exits 2 while incomplete, 0 when done).
+  (started as a nohup'd process by run_experiment.sh, log in logs/wait_*.log;
+   `--once` exits 2 while incomplete, 0 when done).
 
 Batch 3 (Monte Carlo + range limit + noise-floor fields) — plans live in
 `experiments/run_batch.py` (`exp3_mc`, `exp3_range`, `exp3_floor`, 52 runs):
@@ -63,7 +61,7 @@ Batch 3 (Monte Carlo + range limit + noise-floor fields) — plans live in
 ```bash
 # datasets: only batch-3 skies, with the batch-3 noise seeds
 EXPS="exp3_mc exp3_range exp3_floor" NOISE_SEEDS="201 202 301 401" bash simulate_data.sh
-# runs: one screen session per experiment
+# runs: one nohup'd process per experiment
 bash run_experiment.sh exp3_mc exp3_range exp3_floor
 bash scripts/status.sh
 ```

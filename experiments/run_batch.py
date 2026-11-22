@@ -257,6 +257,10 @@ def main(argv=None):
     for exp in exps:
         exp_root = Path(batch_root) / f"{exp}_{ts}"
         log_dir = exp_root / "logs"; log_dir.mkdir(parents=True, exist_ok=True)
+        # banner first — the log must show life immediately, even if the run
+        # then fails (e.g. missing datasets)
+        print(f"[{exp}] run_batch starting {ts}  python={sys.executable}", flush=True)
+        print(f"[{exp}] exp_root={exp_root}  dataset_root={dataset_root}", flush=True)
         jobs = build_jobs(exp, dataset_root, exp_root)
         missing = [j for j in jobs if not (Path(j["dataset"]) / "obs.npz").exists()]
         if missing:
@@ -264,12 +268,7 @@ def main(argv=None):
                   f" — run simulate_data.sh first", file=sys.stderr, flush=True)
             return 1
         todo = [j for j in jobs if not j["done"]]
-        # banner first — the session log must show life immediately, not after
-        # the first ~100 s CLEAN run completes
-        print(f"[{exp}] run_batch starting {ts}  python={sys.executable}", flush=True)
-        print(f"[{exp}] exp_root={exp_root}", flush=True)
-        print(f"[{exp}] dataset_root={dataset_root}  jobs={len(jobs)}  "
-              f"already done={len(jobs)-len(todo)}  to run={len(todo)}  "
+        print(f"[{exp}] jobs={len(jobs)}  already done={len(jobs)-len(todo)}  to run={len(todo)}  "
               f"maxjobs={args.maxjobs} nthreads={args.nthreads}  (maxjobs*nthreads={args.maxjobs*args.nthreads} threads)",
               flush=True)
         if args.dry:

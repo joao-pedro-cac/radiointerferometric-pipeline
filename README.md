@@ -28,7 +28,7 @@ remote tree (everything at the repo root): `scripts/paths.sh` auto-detects
 ```bash
 bash setup_env.sh                     # uv-based env -> ./venv (python3-venv fallback); runs pytest gate
 bash simulate_data.sh                 # build datasets (SIM_MODE=ducc0 fast | oskar via singularity)
-bash run_experiment.sh                # screen sessions b2_<exp> (python pool per exp) + b2_wait monitor
+bash run_experiment.sh                # one nohup'd python process per exp + wait monitor (logs/*.pid)
 bash run_experiment.sh --dry          # show what would launch
 bash run_experiment.sh --dry          # show what would launch
 # batch 3 (Monte Carlo / range limit / noise-floor fields):

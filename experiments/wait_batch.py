@@ -27,7 +27,7 @@ def default_root():
 def collect(root):
     """One row per exp dir (exp_* containing progress.json or summary.csv)."""
     rows = []
-    for d in sorted(Path(root).glob("exp_*")):
+    for d in sorted(Path(root).glob("exp*")):  # exp_dr..., exp3_mc...
         if not d.is_dir():
             continue
         pj = d / "progress.json"
@@ -60,7 +60,7 @@ def render(rows, root=""):
         lines.append("(no experiments yet)")
         all_done = False
     lines.append("")
-    lines.append("attach: screen -r b2_<exp>   per-run logs: <exp_root>/logs/<run>.log")
+    lines.append("live log: tail -f logs/<exp>_*.log   overview: bash scripts/status.sh   per-run logs: <exp_root>/logs/<run>.log")
     return "\n".join(lines), all_done
 
 
