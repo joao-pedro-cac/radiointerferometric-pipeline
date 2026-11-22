@@ -1,20 +1,34 @@
 #!/usr/bin/env bash
-# Create a working pipeline environment on Python 3.9 (macOS arm64 tested).
-# Usage: bash setup_env.sh /path/to/venv
+# Create the v2 pipeline environment with uv (uv assumed installed; falls back
+# to python3 -m venv when uv is absent, e.g. the local macOS box).
+#
+#   bash setup_env.sh /path/to/venv        # then: export VENV_PATH=/path/to/venv
+#
+# Requires: uv (https://docs.astral.sh/uv/) or python3 >= 3.9.
 set -euo pipefail
 VENV="${1:-/tmp/joao-venv}"
 ROOT="${STAGE_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-python3 -m venv "$VENV"
-"$VENV/bin/pip" install --upgrade "pip<25"
-# numpy pinned to 1.26.x: 2.x removes np.product, which dask-ms 0.2.x still uses
-"$VENV/bin/pip" install "numpy==1.26.4" "numba==0.60.0" numexpr xarray "zarr==2.18.2" \
-    "dask==2024.8.0" ducc0 astropy matplotlib psutil fsspec s3fs \
-    toolz cloudpickle partd locket packaging importlib_metadata donfig rich "scipy==1.13.1"
-# dask-ms without its casacore extra (python-casacore needs system casacore libs)
-"$VENV/bin/pip" install --no-deps "dask-ms==0.2.21"
+if command -v uv >/dev/null 2>&1; then
+  echo "== uv $(uv --version) — creating $VENV"
+  uv venv "$VENV" --python 3.9 --seed 2>/dev/null || uv venv "$VENV" --python 3 --seed
+  PIP="uv pip install --python $VENV/bin/python"
+else
+  echo "== uv not found — falling back to python3 -m venv (install uv for faster setup)"
+  python3 -m venv "$VENV"
+  "$VENV/bin/pip" install --upgrade "pip<25"
+  PIP="$VENV/bin/pip install"
+fi
+
+# pinned scientific stack (numpy 1.26.4: numpy 2.x breaks dask-ms 0.2.x)
+$PIP -r "$HERE/requirements-v2.txt"
+# dask-ms without deps (python-casacore needs system casacore libs);
 # pfb-imaging from the pinned clone in ../lib (skip its pyproject deps/jax)
-"$VENV/bin/pip" install --no-deps --ignore-requires-python -e "$ROOT/../lib/pfb-imaging"
+$PIP --no-deps "dask-ms==0.2.21"
+$PIP --no-deps --ignore-requires-python -e "$ROOT/../lib/pfb-imaging"
 
+"$VENV/bin/python" -m pytest "$HERE/tests/" -q || echo "WARNING: test gate failed — inspect before running experiments"
 echo "Environment ready at $VENV"
-echo "Run experiments with: VENV_PATH=$VENV bash scripts/run_minimal.sh"
+echo "Next: export VENV_PATH=$VENV STAGE_ROOT=$ROOT"
+echo "      bash simulate_data.sh && bash run_experiment.sh"

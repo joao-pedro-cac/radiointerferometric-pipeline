@@ -1,0 +1,28 @@
+# v2 pipeline environment — exact pins of the validated venv (numpy 1.26.4:
+# numpy 2.x removes np.product which dask-ms 0.2.x still uses).
+# dask-ms and pfb-imaging are installed separately with --no-deps (see setup_env.sh).
+numpy==1.26.4
+numba==0.60.0
+llvmlite==0.43.0
+numexpr==2.10.2
+xarray==2024.7.0
+zarr==2.18.2
+dask==2024.8.0
+ducc0==0.42.0
+astropy==5.3.2
+matplotlib==3.9.4
+scipy==1.13.1
+pandas==2.3.3
+psutil==7.2.2
+fsspec==2025.10.0
+s3fs==2025.10.0
+toolz==1.2.0
+cloudpickle==3.1.3
+partd==1.4.2
+locket==1.0.0
+packaging==26.3
+importlib_metadata
+donfig==0.8.1.post1
+rich==15.0.0
+pytest==8.4.2
+PyYAML==6.0.3
